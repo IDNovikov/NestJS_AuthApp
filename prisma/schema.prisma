@@ -1,0 +1,184 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum userRoles {
+    ADMIN
+    USER
+}
+enum userStatus {
+    ACTIVE
+    BANNED
+    DELETED
+}
+enum eventStatus {
+   ACTIVE
+   ARCHIVE
+   SOLDOUT
+}
+model User {
+    id Int @id @default(autoincrement())
+    userName String? @unique
+    email String? @unique 
+    telegramId String? @unique 
+    role userRoles @default(USER)
+    status userStatus @default(ACTIVE)
+    password String? 
+    userImage String? 
+
+    likes Like[]
+    comments Comment []
+    subscriptions Subscription []
+
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+}
+
+model Place {
+    id Int @id @default(autoincrement())
+    placeName String
+    placeImage String?
+    description String?
+    rating Decimal @db.Decimal(3,2)
+
+    events      Event[]
+
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+}
+
+model Event {
+    id Int @id @default(autoincrement())
+    placeId Int
+    status eventStatus @default(ACTIVE)
+    eventName String
+    description String?
+    eventImage String?
+    sourceURL String?
+
+    slotsHash String?
+    lastSlotsHash String?
+    lastNotifyHash String?
+
+    place  Place  @relation(fields: [placeId], references: [id])
+    afishaHash    AfishaHash?  @relation("Event_AfishaHash")
+
+    slots Slot[]
+    comments Comment []
+    likes Like []
+    subscription Subscription[]
+   
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    @@index([placeId])
+}
+
+model AfishaHash {
+    eventId Int @id
+    afisha Json?
+    afishaHash String?
+
+    event      Event    @relation("Event_AfishaHash", fields: [eventId], references: [id], onDelete: Cascade)
+    
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+}
+
+
+model Slot{
+    id Int @id @default(autoincrement())
+    eventId Int
+    startsAt DateTime
+
+    event Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    
+    slotItems SlotItem []
+    
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    @@unique([eventId, startsAt]) 
+    @@index([eventId])
+    @@index([startsAt])
+}
+
+model SlotItem {
+    id Int @id @default(autoincrement())
+    slotId Int
+    ticketType String?
+    quantity Int
+    price Decimal  @db.Decimal(10,2)
+
+    lastStateHash  String?
+    lastChangeAt   DateTime?
+    lastNotifiedAt DateTime?
+    observedAt     DateTime?
+
+    slot Slot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    @@unique([slotId, ticketType, price])
+    @@index([slotId])
+    @@index([quantity])
+    @@index([price])
+    }
+
+model Subscription{
+    id Int @id @default(autoincrement())
+    userId Int
+    eventId Int
+
+    price Int
+
+    dateOfFirstMessage DateTime?
+    dateFilter DateTime?
+
+    minQuantityFilter Int?
+    maxQuantityFilter Int?
+    maxPriceFilter Decimal?  @db.Decimal(10,2)
+    endsAt DateTime
+    notifyByTelegram Boolean @default(true)
+    notifyByEmail Boolean @default(true)
+    
+    user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+    event  Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId, eventId])
+    @@index([eventId, dateFilter])
+}
+
+model Like {
+    id Int @id @default(autoincrement())
+    userId Int
+    eventId Int
+    author User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, eventId])
+    @@index([eventId])
+}
+
+model Comment {
+    id Int @id @default(autoincrement())
+    userId Int
+    eventId Int
+    text String
+    author User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    @@unique([userId, eventId])
+    @@index([eventId])
+}
+
