@@ -1,17 +1,66 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserQueryDto } from './dto/user-query.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get user by id' })
+  @ApiResponse({ status: 200, description: 'Return user data' })
   getUserById(@Param('id') id: number) {
+    console.log(`Get user by ${id}`);
     return this.usersService.getUserById(id);
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Get users by params' })
+  @ApiResponse({ status: 200, description: 'Return users' })
+  getUsers(@Query() q: UserQueryDto) {
+    return this.usersService.getUsers(q);
+  }
+
+  // @Put(':id')
+  // @ApiOperation({ summary: 'Update user' })
+  // @ApiResponse({ status: 200, description: 'User updated' })
+  // update(@Param('id') id: number, @Body() body: UpdateUserDto) {
+  //   return this.usersService.updateUser(body);
+  // }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User deleted',
+  })
+  deleteUser(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.deleteUser(id);
+  }
+
   @Post()
-  createUser(@Body() body: any) {
-    return this.usersService.createUser(body);
+  @ApiOperation({ summary: 'Create new user' })
+  @ApiResponse({ status: 200, description: 'Return user data' })
+  createUser(@Body() dto: CreateUserDto) {
+    return this.usersService.createUser(dto);
   }
 }

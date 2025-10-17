@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@/app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -6,15 +7,18 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.setGlobalPrefix('api');
+
   //SWAGGER CONFIG
   const config = new DocumentBuilder()
     .setTitle('Afishaved API')
     .setDescription('REST API docs')
     .setVersion('1.0')
+    //.addBearerAuth()//Для авторизации
     .build();
 
   const doc = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, doc);
+  SwaggerModule.setup('api/docs', app, doc);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -25,6 +29,6 @@ async function bootstrap() {
   );
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log('SERVER is STSRTED');
+  console.log(`🚀Server is running on http://localhost:3000/`);
 }
 bootstrap();

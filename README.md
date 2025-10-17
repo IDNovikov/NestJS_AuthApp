@@ -50,11 +50,22 @@ src/
    npm i -g @nestjs/cli
 1. 1. Улучшили конфиги проекта
 1. 2. Доп зависмости:
-      npm i @nestjs/swagger swagger-ui-express
-      npm i @nestjs/graphql @nestjs/apollo graphql
-      npm i -D jest @types/jest ts-jest jest-environment-node
+
+   npm i @nestjs/swagger swagger-ui-express
+   npm i @nestjs/graphql @nestjs/apollo graphql
+   npm i -D jest @types/jest ts-jest jest-environment-node
+   npm i -D nodemon
+   npm i reflect-metadata
+   npm i @nestjs/config @nestjs/jwt @nestjs/passport passport passport-jwt
+   npm i ioredis @nestjs/throttler
+   npm i pino-http pino
+   npm i class-validator class-transformer
+   npm i joi
+
 1. Устанавливаем Prisma в качестве зависимости для разработки
+   ОБЯЗАТЕЛЬНО ВКЛЮЧИТЬ ВПН
    npm i -D prisma
+   npx prisma init
    Инициализируем Prisma-проект:
    npx prisma migrate dev --name init //- название миграции
 

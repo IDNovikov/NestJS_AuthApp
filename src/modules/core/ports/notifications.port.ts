@@ -10,3 +10,12 @@ export type NotifyPayload = {
 export interface NotificationsPort {
   notify(payload: NotifyPayload): Promise<void>;
 }
+
+
+
+
+
+
+
+
+
