@@ -56,11 +56,12 @@ src/
    npm i -D jest @types/jest ts-jest jest-environment-node
    npm i -D nodemon
    npm i reflect-metadata
-   npm i @nestjs/config @nestjs/jwt @nestjs/passport passport passport-jwt
+   npm i @nestjs/config @nestjs/jwt @nestjs/passport passport passport-jwt @types/passport-jwt
    npm i ioredis @nestjs/throttler
    npm i pino-http pino
    npm i class-validator class-transformer
    npm i joi
+   npm install @as-integrations/express
 
 1. Устанавливаем Prisma в качестве зависимости для разработки
    ОБЯЗАТЕЛЬНО ВКЛЮЧИТЬ ВПН
@@ -78,5 +79,14 @@ src/
    npm cache clean --force
    npm i @prisma/client@6.17.0
    npx prisma generate
+
 1. В main.ts подключили swagger
 1. в modules/core/ports реализовали порты NotificationsPort, QueuePort, EventBus (заменим на BullMQ/Telegram/ClickHouse без переписывания логики) в modules/core/adapters описали notifications.console.ts, queue.memory.ts, event-bus.noop.ts
+
+- запуск redis:
+  docker run -d --name redis -p 6379:6379 redis:7-alpine
+  docker stop redis
+
+Измененив призму => миграция + ген:
+npx prisma migrate dev --name add_auth_fields
+npx prisma generate

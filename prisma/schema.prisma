@@ -23,12 +23,13 @@ enum eventStatus {
 }
 model User {
     id Int @id @default(autoincrement())
-    userName String? @unique
-    email String? @unique 
+    userName String @unique
+    email String @unique 
+    refreshToken String?
     telegramId String? @unique 
     role userRoles @default(USER)
     status userStatus @default(ACTIVE)
-    password String? 
+    password String 
     userImage String? 
 
     likes Like[]

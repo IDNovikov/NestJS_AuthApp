@@ -29,7 +29,6 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({ status: 200, description: 'Return user data' })
   getUserById(@Param('id') id: number) {
-    console.log(`Get user by ${id}`);
     return this.usersService.getUserById(id);
   }
 
@@ -37,15 +36,16 @@ export class UsersController {
   @ApiOperation({ summary: 'Get users by params' })
   @ApiResponse({ status: 200, description: 'Return users' })
   getUsers(@Query() q: UserQueryDto) {
+    console.log(q);
     return this.usersService.getUsers(q);
   }
 
-  // @Put(':id')
-  // @ApiOperation({ summary: 'Update user' })
-  // @ApiResponse({ status: 200, description: 'User updated' })
-  // update(@Param('id') id: number, @Body() body: UpdateUserDto) {
-  //   return this.usersService.updateUser(body);
-  // }
+  @Put(':id')
+  @ApiOperation({ summary: 'Update user' })
+  @ApiResponse({ status: 200, description: 'User updated' })
+  update(@Param('id') id: number, @Body() body: UpdateUserDto) {
+    return this.usersService.updateUser(id, body);
+  }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
