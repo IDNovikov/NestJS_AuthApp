@@ -4,12 +4,14 @@ import { HashService } from './hash.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../users/users.module';
+import { MailModule } from '../mail/mail.module';
 
 @Global()
 @Module({
   imports: [
     ConfigModule,
     UserModule,
+    MailModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -9,6 +9,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { RedisModule } from './modules/core/redis/redis.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
     CoreModule,
     UserModule,
     AuthModule,
+    MailModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,

@@ -25,17 +25,18 @@ model User {
     id Int @id @default(autoincrement())
     userName String @unique
     email String @unique 
+    isEmailVerified Boolean @default(false)
+    emailVerifyCode String?
+    emailVerifyExpired DateTime?
     refreshToken String?
     telegramId String? @unique 
     role userRoles @default(USER)
     status userStatus @default(ACTIVE)
     password String 
     userImage String? 
-
     likes Like[]
     comments Comment []
     subscriptions Subscription []
-
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
 }

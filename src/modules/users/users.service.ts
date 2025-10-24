@@ -25,6 +25,7 @@ export class UsersService {
     userName: true,
     role: true,
     status: true,
+    refreshToken: true,
     createdAt: true,
     updatedAt: true,
   } as const;
@@ -41,17 +42,16 @@ export class UsersService {
         : this.safeSelect,
     });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({ message: 'User not found' });
     }
     await this.redis.set(`user:${id}`, user);
     return user;
   }
 
-  async getUserByEmail(email: string, withPassword = false) {
-    const cached = await this.redis.get<User>(`user:${email}`);
-    if (cached) {
-      return cached;
-    }
+  async getUserByEmail<T extends boolean = false>(
+    email: string,
+    withPassword?: T,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: withPassword
@@ -59,10 +59,12 @@ export class UsersService {
         : this.safeSelect,
     });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException({ message: 'User not found' });
     }
-    await this.redis.set(`user:${email}`, user);
-    return user;
+    await this.redis.set(`user:${user.id}`, user);
+    return user as T extends true
+      ? typeof user & { password: string }
+      : typeof user;
   }
   async getUsers(q: UserQueryDto) {
     const { page = 1, limit = 20, sortBy, order, search } = q;
@@ -97,7 +99,15 @@ export class UsersService {
     ]);
     return { items, total, page, limit };
   }
-
+  async deleteUser(id: number): Promise<User> {
+    const user = await this.prisma.user.delete({ where: { id: id } });
+    if (!user) {
+      throw new NotFoundException({ message: 'User not found' });
+    }
+    await this.redis.del(`user:${id}`);
+    return user;
+  }
+  //Тогда тут не должен быть только UpdateUserDto, но dto для замены ключа телеграм, замены пароля и тд. Типизация как-то должна быть динамческой и зависть от контекста в котором используется сервис
   async updateUser(id: number, dto: UpdateUserDto) {
     const updatedUser = this.prisma.user.update({
       where: { id },
@@ -108,15 +118,6 @@ export class UsersService {
     return updatedUser;
   }
 
-  async deleteUser(id: number): Promise<User> {
-    const user = await this.prisma.user.delete({ where: { id: id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    await this.redis.del(`user:${id}`);
-    return user;
-  }
-
   async createUser(dto: CreateUserDto): Promise<User> {
     const exist = await this.prisma.user.findFirst({
       where: {
@@ -125,9 +126,9 @@ export class UsersService {
     });
 
     if (exist?.email === dto.email) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException({ message: 'Email already registered' });
     } else if (exist?.userName === dto.userName) {
-      throw new ConflictException('UserName already registered');
+      throw new ConflictException({ message: 'UserName already registered' });
     }
 
     const user = await this.prisma.user.create({

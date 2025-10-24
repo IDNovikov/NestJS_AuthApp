@@ -57,6 +57,7 @@ export class UsersController {
     return this.usersService.deleteUser(id);
   }
 
+  //toDo Удалить этот роут
   @Post()
   @ApiOperation({ summary: 'Create new user' })
   @ApiResponse({ status: 200, description: 'Return user data' })

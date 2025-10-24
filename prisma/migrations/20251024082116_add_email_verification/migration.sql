@@ -1,0 +1,11 @@
+/*
+  Warnings:
+
+  - Made the column `password` on table `User` required. This step will fail if there are existing NULL values in that column.
+
+*/
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "emailVerifyCode" TEXT,
+ADD COLUMN     "emailVerifyExpired" TIMESTAMP(3),
+ADD COLUMN     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+ALTER COLUMN "password" SET NOT NULL;

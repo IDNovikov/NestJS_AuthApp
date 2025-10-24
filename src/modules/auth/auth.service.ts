@@ -55,13 +55,14 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string) {
-    const user = await this.user.getUserByEmail(email);
+    const user = await this.user.getUserByEmail(email, true);
+
     if (!user || !user.email || !user.password)
       throw new UnauthorizedException('Invalid email');
     const valid = await this.hash.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid email');
 
-    return { id, email, userName };
+    return { id: user.id, email: user.email, role: user.role };
   }
 
   async login({ userId, email, role }: JWTpayload) {
@@ -90,4 +91,8 @@ export class AuthService {
       data: { refreshToken: null },
     });
   }
+  async registrate(userName: string, email: string, password: string) {
+    const user = await this.user.createUser({ email, password, userName });
+  }
+  async verifyEmail(email, code) {}
 }
