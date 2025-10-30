@@ -67,24 +67,19 @@ export class UsersService {
       ? typeof user & { password: string }
       : typeof user;
   }
-  async getUsers(q: UserQueryDto) {
+  async getUsers(q: UserQueryDto): Promise<{
+    items: Omit<User, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const { page = 1, limit = 20, sortBy, order, search } = q;
 
     const where: Prisma.UserWhereInput = search
       ? {
           OR: [
-            {
-              email: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
-            {
-              userName: {
-                contains: search,
-                mode: Prisma.QueryMode.insensitive,
-              },
-            },
+            { email: { contains: search, mode: 'insensitive' } },
+            { userName: { contains: search, mode: 'insensitive' } },
           ],
         }
       : {};
@@ -95,11 +90,14 @@ export class UsersService {
         orderBy: { [sortBy]: order },
         skip: (page - 1) * limit,
         take: limit,
+        select: this.safeSelect,
       }),
       this.prisma.user.count({ where }),
     ]);
+
     return { items, total, page, limit };
   }
+
   async deleteUser(id: number): Promise<User> {
     const user = await this.prisma.user.delete({ where: { id: id } });
     if (!user) {
@@ -109,8 +107,8 @@ export class UsersService {
     return user;
   }
   //Тогда тут не должен быть только UpdateUserDto, но dto для замены ключа телеграм, замены пароля и тд. Типизация как-то должна быть динамческой и зависть от контекста в котором используется сервис
-  async updateUser(id: number, dto: UpdateUserDto) {
-    const updatedUser = this.prisma.user.update({
+  async updateUser(id: number, dto: Prisma.UserUpdateInput) {
+    const updatedUser = await this.prisma.user.update({
       where: { id },
       data: dto,
       select: this.safeSelect,

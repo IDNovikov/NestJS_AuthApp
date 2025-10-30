@@ -1,16 +1,18 @@
-import { Global, Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HashService } from './hash.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 
 @Global()
 @Module({
   imports: [
     ConfigModule,
-    UserModule,
+    forwardRef(() => UserModule),
     MailModule,
     PassportModule,
     JwtModule.registerAsync({
@@ -22,7 +24,9 @@ import { MailModule } from '../mail/mail.module';
       }),
     }),
   ],
+  controllers: [AuthController],
   providers: [
+    AuthService,
     {
       provide: HashService,
       useFactory: (config: ConfigService) =>

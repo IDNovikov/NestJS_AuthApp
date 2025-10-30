@@ -31,11 +31,11 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new LoggingInterceptors());
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
-
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀Server is running on http://localhost:3000/`);
-  console.log('REST:    http://localhost:3000/users');
-  console.log('Swagger: http://localhost:3000/api/docs');
-  console.log('GraphQL: http://localhost:3000/graphql');
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  console.log(`🚀Server is running on http://localhost:${port}/`);
+  console.log(`REST:    http://localhost:${port}/users`);
+  console.log(`Swagger: http://localhost:${port}/api/docs`);
+  console.log(`GraphQL: http://localhost:${port}/graphql`);
 }
 bootstrap();

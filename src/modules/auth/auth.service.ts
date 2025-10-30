@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -7,8 +8,9 @@ import { PrismaService } from '../core/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { HashService } from './hash.service';
-import { User } from '@prisma/client';
+//import { User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
+import { checkPassword } from '@/common/utils/checkPassword.util';
 
 type JWTpayload = {
   userId: number;
@@ -92,7 +94,25 @@ export class AuthService {
     });
   }
   async registrate(userName: string, email: string, password: string) {
+    const { isVaild, message } = checkPassword(password);
+    if (!isVaild || message) {
+      throw new ConflictException(message);
+    }
     const user = await this.user.createUser({ email, password, userName });
   }
   async verifyEmail(email, code) {}
+
+  async changePassword(id: number, oldPassword: string, newPassword: string) {
+    const { isVaild, message } = checkPassword(newPassword);
+    if (!isVaild || message) {
+      throw new ConflictException(message);
+    }
+
+    const user = await this.user.getUserById(id, true);
+
+    if (user.password === oldPassword) {
+      throw new ConflictException('Passwords must be differ');
+    }
+  }
+  async getTempPass(email) {}
 }
