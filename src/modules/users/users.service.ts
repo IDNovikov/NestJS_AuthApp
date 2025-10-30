@@ -28,6 +28,7 @@ export class UsersService {
     refreshToken: true,
     createdAt: true,
     updatedAt: true,
+    emailVerifyCode: true,
   } as const;
 
   async getUserById(id: number, withPassword = false) {

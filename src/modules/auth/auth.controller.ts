@@ -25,7 +25,9 @@ export class AuthController {
   @Post('registrate')
   @ApiOperation({ summary: 'Registrate user' })
   @ApiResponse({ status: 200, description: 'Return user data' })
-  async registrate(@Body() dto: RegistrateDto) {}
+  async registrate(@Body() dto: RegistrateDto) {
+    return this.auth.registrate(dto.userName, dto.email, dto.password);
+  }
 
   @Post('verify-email')
   @ApiOperation({ summary: 'Verify new users email' })
