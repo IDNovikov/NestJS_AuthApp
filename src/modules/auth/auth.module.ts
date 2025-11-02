@@ -7,6 +7,7 @@ import { UserModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
 
 @Global()
 @Module({
@@ -14,7 +15,7 @@ import { AuthService } from './auth.service';
     ConfigModule,
     forwardRef(() => UserModule),
     MailModule,
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -27,6 +28,7 @@ import { AuthService } from './auth.service';
   controllers: [AuthController],
   providers: [
     AuthService,
+    JwtStrategy,
     {
       provide: HashService,
       useFactory: (config: ConfigService) =>
@@ -37,6 +39,6 @@ import { AuthService } from './auth.service';
       inject: [ConfigService],
     },
   ],
-  exports: [HashService],
+  exports: [HashService, JwtModule, PassportModule],
 })
 export class AuthModule {}

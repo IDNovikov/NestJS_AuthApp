@@ -1,3 +1,3 @@
 import * as checkPassword from './checkPassword.util';
-
-export const utils = { checkPassword };
+import { get6NumberCode, getRandomPass } from './getRandomCodes.util';
+export const utils = { checkPassword, get6NumberCode, getRandomPass };

@@ -11,6 +11,11 @@ import { HashService } from './hash.service';
 //import { User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { checkPassword } from '@/common/utils/checkPassword.util';
+import {
+  get6NumberCode,
+  getRandomPass,
+} from '@/common/utils/getRandomCodes.util';
+import { MailService } from '../mail/mail.service';
 
 type JWTpayload = {
   userId: number;
@@ -26,6 +31,7 @@ export class AuthService {
     private cfg: ConfigService,
     private hash: HashService,
     private user: UsersService,
+    private mail: MailService,
   ) {}
 
   private async updateRefreshToken(userId: number, refreshToken: string) {
@@ -42,15 +48,15 @@ export class AuthService {
     role,
   }: JWTpayload): Promise<{ access_token: string; refresh_token: string }> {
     const payload = { sub: userId, email, role };
-
+    console.log(payload);
     const [access_token, refresh_token] = await Promise.all([
       this.jwt.signAsync(payload, {
         secret: this.cfg.get('JWT_SECRET'),
-        expiresIn: '15m',
+        expiresIn: this.cfg.get('JWT_EXPIRES'),
       }),
       this.jwt.signAsync(payload, {
         secret: this.cfg.get('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
+        expiresIn: this.cfg.get('JWT_REFRESH_EXPIRES'),
       }),
     ]);
     return { access_token, refresh_token };
@@ -58,12 +64,10 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.user.getUserByEmail(email, true);
-
     if (!user || !user.email || !user.password)
       throw new UnauthorizedException('Invalid email');
     const valid = await this.hash.compare(password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid email');
-
+    if (!valid) throw new UnauthorizedException('Wrong password');
     return { id: user.id, email: user.email, role: user.role };
   }
 
@@ -73,11 +77,17 @@ export class AuthService {
     return tokens;
   }
 
-  async refreshTokens(userId: number, refreshToken: string) {
-    const user = await this.user.getUserById(userId);
-    if (!user || !user.refreshToken || !user.id || !user.email)
-      throw new ForbiddenException('Access Denied');
+  async refreshTokens(refreshToken: string) {
+    const { sub, email } = await this.jwt.verify(refreshToken, {
+      secret: this.cfg.get('JWT_REFRESH_SECRET'),
+    });
+
+    const user = await this.user.getUserById(sub);
+
+    console.log(user);
+    if (!user.refreshToken) throw new ForbiddenException('Mismatch token');
     const match = await this.hash.compare(refreshToken, user.refreshToken);
+
     if (!match) throw new ForbiddenException('Invalid refresh token');
 
     const tokens = await this.generateTokens({
@@ -85,6 +95,9 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
+
+    const hashedRefreshToken = await this.hash.hash(tokens.refresh_token);
+    await this.user.updateUser(user.id, { refreshToken: hashedRefreshToken });
     return tokens;
   }
   async logout(userId: number) {
@@ -98,21 +111,88 @@ export class AuthService {
     if (!isVaild || message) {
       throw new ConflictException(message);
     }
-    const user = await this.user.createUser({ email, password, userName });
+    const code = get6NumberCode();
+    const date = new Date(Date.now() + 10 * 60 * 1000);
+    const user = await this.user.createUser(
+      { email, password, userName },
+      code,
+      date,
+    );
+    console.log(user);
+    await this.mail.sendVerificationMail(email, code);
+    return {
+      id: user.id,
+      expiresTime: date,
+      message: 'User created. Check your email for verification code.',
+    };
   }
-  async verifyEmail(email, code) {}
+
+  async verifyEmail(id: number, code: string) {
+    const user = await this.user.getUserById(id);
+    const now = new Date();
+    if (!user.emailVerifyCode) {
+      throw new ForbiddenException('Verification code is missing');
+    }
+
+    if (!user.emailVerifyExpired) {
+      throw new ForbiddenException('Verification expiry is missing');
+    }
+    if (user.emailVerifyCode !== code) {
+      throw new ForbiddenException('Invalid verification code');
+    }
+
+    if (user.emailVerifyExpired <= now) {
+      throw new ForbiddenException('Verification code has expired');
+    }
+
+    await this.user.updateUser(id, {
+      isEmailVerified: true,
+      emailVerifyCode: null,
+      emailVerifyExpired: null,
+    });
+    console.log('ver-em   ' + user.id);
+    const tokens = await this.login({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+    return tokens;
+  }
 
   async changePassword(id: number, oldPassword: string, newPassword: string) {
     const { isVaild, message } = checkPassword(newPassword);
-    if (!isVaild || message) {
+    if (!isVaild) {
       throw new ConflictException(message);
     }
-
     const user = await this.user.getUserById(id, true);
 
-    if (user.password === oldPassword) {
-      throw new ConflictException('Passwords must be differ');
+    if (!user.password) {
+      throw new ConflictException('Original password not found');
     }
+    const isCorrectPass = await this.hash.compare(oldPassword, user.password);
+    if (!isCorrectPass) {
+      throw new ConflictException('Wrong old password');
+    }
+    const hashedPassword = await this.hash.hash(newPassword);
+    return await this.user.updateUser(id, {
+      password: hashedPassword,
+      refreshToken: null,
+    });
   }
-  async getTempPass(email) {}
+
+  async getTempPass(email: string) {
+    const user = await this.user.getUserByEmail(email);
+
+    let tempPass = getRandomPass(10);
+    const { isVaild } = checkPassword(tempPass);
+    if (!isVaild) {
+      tempPass = getRandomPass(10);
+    }
+    await this.mail.sendTempPass(email, tempPass);
+    const hashedPassword = await this.hash.hash(tempPass);
+    return await this.user.updateUser(user.id, {
+      password: hashedPassword,
+      refreshToken: null,
+    });
+  }
 }

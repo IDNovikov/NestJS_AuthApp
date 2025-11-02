@@ -1,8 +1,8 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import { IsInt, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 
 export class VerifyDto {
-  @ApiProperty() @IsEmail() email!: string;
+  @ApiProperty() @IsInt() id!: number;
   @ApiProperty({ minLength: 6, maxLength: 6 })
   @IsNotEmpty()
   @MinLength(6)

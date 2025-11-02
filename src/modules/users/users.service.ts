@@ -29,22 +29,32 @@ export class UsersService {
     createdAt: true,
     updatedAt: true,
     emailVerifyCode: true,
+    emailVerifyExpired: true,
   } as const;
 
+  async getUserById(
+    id: number,
+    withPassword: true,
+  ): Promise<User & { password: string }>;
+  async getUserById(
+    id: number,
+    withPassword?: false,
+  ): Promise<Omit<User, 'password'>>;
   async getUserById(id: number, withPassword = false) {
     const cached = await this.redis.get<User>(`user:${id}`);
-    if (cached) {
-      return cached;
-    }
+    if (cached) return cached;
+
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: withPassword
         ? { ...this.safeSelect, password: true }
         : this.safeSelect,
     });
+
     if (!user) {
       throw new NotFoundException({ message: 'User not found' });
     }
+
     await this.redis.set(`user:${id}`, user);
     return user;
   }
@@ -95,7 +105,7 @@ export class UsersService {
       this.prisma.user.count({ where }),
     ]);
 
-    return { items, total, page, limit };
+    return { items: items as any, total, page, limit };
   }
 
   async deleteUser(id: number): Promise<User> {
@@ -117,24 +127,30 @@ export class UsersService {
     return updatedUser;
   }
 
-  async createUser(dto: CreateUserDto): Promise<User> {
+  async createUser(
+    { email, password, userName },
+    verifyCode?: string,
+    verifyExpired?: Date,
+  ): Promise<User> {
     const exist = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: dto.email }, { userName: dto.userName }],
+        OR: [{ email: email }, { userName: userName }],
       },
     });
 
-    if (exist?.email === dto.email) {
+    if (exist?.email === email) {
       throw new ConflictException({ message: 'Email already registered' });
-    } else if (exist?.userName === dto.userName) {
+    } else if (exist?.userName === userName) {
       throw new ConflictException({ message: 'UserName already registered' });
     }
 
     const user = await this.prisma.user.create({
       data: {
-        userName: dto.userName,
-        email: dto.email,
-        password: await this.hashService.hash(dto.password),
+        userName: userName,
+        email: email,
+        password: await this.hashService.hash(password),
+        emailVerifyCode: verifyCode ?? null,
+        emailVerifyExpired: verifyExpired ?? null,
       },
     });
 
