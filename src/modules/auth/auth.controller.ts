@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCookieAuth,
@@ -14,6 +22,7 @@ import { GetTempPassDto } from './dto/getTempPass.dto';
 import { ChangePasswordDto } from './dto/changePass.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Response } from 'express';
+import { CookieInterceptor } from '@/common/interceptors/cookie.interceptor';
 
 @ApiTags('auth')
 @ApiCookieAuth('refresh_token')
@@ -21,6 +30,7 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private auth: AuthService) {}
 
+  @UseInterceptors(CookieInterceptor)
   @Post('login')
   @ApiOperation({ summary: 'Login by email & pass' })
   @ApiResponse({
@@ -36,25 +46,19 @@ export class AuthController {
       },
     },
   })
-  async login(
-    @Body() dto: LoginDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async login(@Body() dto: LoginDto) {
     const user = await this.auth.validateUser(dto.email, dto.password);
     const tokens = await this.auth.login({
       userId: user.id,
       email: user.email,
       role: user.role,
     });
-    res.cookie('refresh_token', tokens.refresh_token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-    });
+
     return {
       message: 'Login successful',
       user: { id: user.id, email: user.email, role: user.role },
       access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
     };
   }
 
@@ -65,21 +69,17 @@ export class AuthController {
     return this.auth.registrate(dto.userName, dto.email, dto.password);
   }
 
+  @UseInterceptors(CookieInterceptor)
   @Post('verify-email')
   @ApiOperation({ summary: 'Verify new users email' })
   @ApiResponse({ status: 200, description: 'Return user data and tokens' })
-  async verify(
-    @Body() dto: VerifyDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async verify(@Body() dto: VerifyDto) {
     const tokens = await this.auth.verifyEmail(dto.id, dto.congfirmedCode);
 
-    res.cookie('refresh_token', tokens.refresh_token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-    });
-    return { access_token: tokens.access_token };
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    };
   }
 
   @Post('logout')
@@ -111,7 +111,7 @@ export class AuthController {
     await this.auth.getTempPass(dto.email);
     return { message: 'Password successfully changed. Check your email' };
   }
-
+  @UseInterceptors(CookieInterceptor)
   @Post('refresh-tokens')
   @ApiOperation({ summary: 'Access and refresh tokens' })
   @ApiResponse({ status: 200 })
@@ -119,12 +119,10 @@ export class AuthController {
     const refreshToken = req.cookies['refresh_token'];
     console.log(refreshToken);
     const tokens = await this.auth.refreshTokens(refreshToken);
-    res.cookie('refresh_token', tokens.refresh_token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-    });
 
-    return { access_token: tokens.access_token };
+    return {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    };
   }
 }
