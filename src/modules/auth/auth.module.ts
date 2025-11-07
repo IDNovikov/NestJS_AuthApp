@@ -8,6 +8,7 @@ import { MailModule } from '../mail/mail.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { RefreshJwtStrategy } from './refreshJwt.stratagy';
 
 @Global()
 @Module({
@@ -29,6 +30,7 @@ import { JwtStrategy } from './jwt.strategy';
   providers: [
     AuthService,
     JwtStrategy,
+    RefreshJwtStrategy,
     {
       provide: HashService,
       useFactory: (config: ConfigService) =>

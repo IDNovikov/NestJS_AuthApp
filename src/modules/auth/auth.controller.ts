@@ -2,8 +2,6 @@ import {
   Body,
   Controller,
   Post,
-  Req,
-  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -21,8 +19,10 @@ import { VerifyDto } from './dto/verify.dto';
 import { GetTempPassDto } from './dto/getTempPass.dto';
 import { ChangePasswordDto } from './dto/changePass.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { Response } from 'express';
 import { CookieInterceptor } from '@/common/interceptors/cookie.interceptor';
+import { User } from '@/common/decorators/UserRefreshToken.decorator';
+import { RefreshToken } from '@/common/decorators/refreshToken.decorator';
+import { RefreshJwtAuthGuard } from '@/common/guards/refresh-jwt-auth.guard';
 
 @ApiTags('auth')
 @ApiCookieAuth('refresh_token')
@@ -62,7 +62,7 @@ export class AuthController {
     };
   }
 
-  @Post('registrate')
+  @Post('register')
   @ApiOperation({ summary: 'Registrate user' })
   @ApiResponse({ status: 200, description: 'Return user data' })
   async registrate(@Body() dto: RegistrateDto) {
@@ -74,55 +74,79 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify new users email' })
   @ApiResponse({ status: 200, description: 'Return user data and tokens' })
   async verify(@Body() dto: VerifyDto) {
-    const tokens = await this.auth.verifyEmail(dto.id, dto.congfirmedCode);
+    const { userId, email, role, tokens } = await this.auth.verifyEmail(
+      dto.id,
+      dto.congfirmedCode,
+    );
 
     return {
+      user: { userId, email, role },
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
     };
   }
 
+  @UseInterceptors(CookieInterceptor)
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access_token')
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200 })
-  async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const userId = req.user?.sub;
-    console.log(req.user);
-    await this.auth.logout(userId);
-    res.clearCookie('refresh_token');
-    return { message: 'User logged out' };
+  async logout(@User() user: { sub: number; email: string; role: string }) {
+    await this.auth.logout(user.sub);
+    return { clear_refresh_cookie: true, message: 'User logged out' };
   }
 
-  @Post('change-pass')
+  @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Change password' })
   @ApiResponse({ status: 200 })
-  async changePass(@Body() dto: ChangePasswordDto) {
-    await this.auth.changePassword(dto.id, dto.oldPassword, dto.newPassword);
+  async changePass(
+    @Body() dto: ChangePasswordDto,
+    @User() user: { sub: number; email: string; role: string },
+  ) {
+    await this.auth.changePassword(user.sub, dto.oldPassword, dto.newPassword);
     return { message: 'Password changed succsessed' };
   }
 
-  @Post('get-temp-pass')
+  @Post('forgot-password')
   @ApiOperation({ summary: 'Get temp pass from email' })
   @ApiResponse({ status: 200 })
   async getTempPass(@Body() dto: GetTempPassDto) {
     await this.auth.getTempPass(dto.email);
     return { message: 'Password successfully changed. Check your email' };
   }
+
   @UseInterceptors(CookieInterceptor)
   @Post('refresh-tokens')
+  @UseGuards(RefreshJwtAuthGuard)
   @ApiOperation({ summary: 'Access and refresh tokens' })
   @ApiResponse({ status: 200 })
-  async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies['refresh_token'];
-    console.log(refreshToken);
-    const tokens = await this.auth.refreshTokens(refreshToken);
-
+  async refresh(@RefreshToken() token: string) {
+    const tokens = await this.auth.refreshTokens(token);
     return {
+      message: 'Tokens refreshed',
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
     };
   }
+
+  // @Get('sessions')
+  // async getUserSessions(){
+  //   async this.auth.getUserSessions()
+  // }
+
+  // @Get('all-sessions')
+  // async getAllSessions(){
+  //   async this.auth.getAllSessions()
+  // }
+
+  //@Post('logoutUser')
+  // async logoutAll(){
+  //   async this.auth.logoutUser()
+  // }
+  //@Post('logout-all')
+  // async logoutAll(){
+  //   async this.auth.logoutAll()
+  // }
 }

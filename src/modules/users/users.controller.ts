@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import {
@@ -19,11 +20,21 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
+  // @Get('me')
+  //   @ApiOperation({ summary: 'Get user by id' })
+  //   @ApiResponse({ status: 200, description: 'Return user data' })
+  //   getUserById(@User()user) {
+  //     return this.usersService.getUserById(id);
+  //   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by id' })
@@ -47,6 +58,8 @@ export class UsersController {
     return this.usersService.updateUser(id, body);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({
@@ -57,7 +70,6 @@ export class UsersController {
     return this.usersService.deleteUser(id);
   }
 
-  //toDo Удалить этот роут
   @Post()
   @ApiOperation({ summary: 'Create new user' })
   @ApiResponse({ status: 200, description: 'Return user data' })

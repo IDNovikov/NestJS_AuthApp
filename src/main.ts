@@ -55,7 +55,7 @@ async function bootstrap() {
 
   app.enableCors({ origin: `http://localhost:${port}/`, credentials: true });
   await app.listen(port);
-  console.log(`🚀Server is running on http://localhost:${port}/`);
+  console.log(`🚀 Server is running on http://localhost:${port}/`);
   console.log(`REST:    http://localhost:${port}/users`);
   console.log(`Swagger: http://localhost:${port}/api/docs`);
   console.log(`GraphQL: http://localhost:${port}/graphql`);

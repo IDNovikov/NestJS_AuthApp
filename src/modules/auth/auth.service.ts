@@ -8,7 +8,6 @@ import { PrismaService } from '../core/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { HashService } from './hash.service';
-//import { User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { checkPassword } from '@/common/utils/checkPassword.util';
 import {
@@ -64,7 +63,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.user.getUserByEmail(email, true);
-    if (!user || !user.email || !user.password)
+    if (!user || !user.email || !user.password || user.status !== 'ACTIVE')
       throw new UnauthorizedException('Invalid email');
     const valid = await this.hash.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Wrong password');
@@ -84,7 +83,6 @@ export class AuthService {
 
     const user = await this.user.getUserById(sub);
 
-    console.log(user);
     if (!user.refreshToken) throw new ForbiddenException('Mismatch token');
     const match = await this.hash.compare(refreshToken, user.refreshToken);
 
@@ -150,13 +148,13 @@ export class AuthService {
       emailVerifyCode: null,
       emailVerifyExpired: null,
     });
-    console.log('ver-em   ' + user.id);
+
     const tokens = await this.login({
       userId: user.id,
       email: user.email,
       role: user.role,
     });
-    return tokens;
+    return { userId: user.id, email: user.email, role: user.role, tokens };
   }
 
   async changePassword(id: number, oldPassword: string, newPassword: string) {
@@ -173,7 +171,11 @@ export class AuthService {
     if (!isCorrectPass) {
       throw new ConflictException('Wrong old password');
     }
+
     const hashedPassword = await this.hash.hash(newPassword);
+    if (hashedPassword === user.password) {
+      throw new ConflictException('Passwords must be diff');
+    }
     return await this.user.updateUser(id, {
       password: hashedPassword,
       refreshToken: null,

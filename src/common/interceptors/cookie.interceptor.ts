@@ -18,6 +18,17 @@ export class CookieInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((data) => {
+        if (!data) return;
+        if (data.clear_refresh_cookie) {
+          res.clearCookie('refresh_token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+          });
+          delete data.clear_refresh_cookie;
+          return;
+        }
+
         if (data?.refresh_token) {
           res.cookie('refresh_token', data.refresh_token, {
             httpOnly: true,
