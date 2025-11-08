@@ -9,11 +9,13 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshJwtStrategy } from './refreshJwt.stratagy';
+import { RedisModule } from '../core/redis/redis.module';
 
 @Global()
 @Module({
   imports: [
     ConfigModule,
+    RedisModule,
     forwardRef(() => UserModule),
     MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),

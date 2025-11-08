@@ -26,10 +26,7 @@ model User {
     userName String @unique
     email String @unique 
     isEmailVerified Boolean @default(false)
-    emailVerifyCode String? //DELETE AFTER
-    emailVerifyExpired DateTime? // DELETE AFTER
-    refreshToken String? //DELETE AFTER
-    //refreshTokens RefreshToken[]
+    refreshTokens RefreshToken[]
     telegramId String? @unique 
     role userRoles @default(USER)
     status userStatus @default(ACTIVE)
@@ -42,17 +39,18 @@ model User {
     updatedAt  DateTime @updatedAt
 }
 
-// model RefreshToken {
-//     id Int @id @default(autoincrement())
-//     tokenHash String 
-//     userId Int
-//     deviceId String?
-//     userAgent String?
-//     userIP String?
-//     createdAt DateTime @default(now())
-//     expiresAt DateTime
-//     user User @relation(fields: [userId], references: [id])
-// }
+model RefreshToken {
+    id Int @id @default(autoincrement())
+    tokenHash String 
+    userId Int
+    deviceId String
+    userAgent String?
+    userIP String?
+    createdAt DateTime @default(now())
+    expiresAt DateTime
+    user User @relation(fields: [userId], references: [id])
+    @@unique([userId, deviceId])
+}
 
 model Place {
     id Int @id @default(autoincrement())

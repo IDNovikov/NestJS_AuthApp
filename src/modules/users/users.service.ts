@@ -127,11 +127,7 @@ export class UsersService {
     return updatedUser;
   }
 
-  async createUser(
-    { email, password, userName },
-    verifyCode?: string,
-    verifyExpired?: Date,
-  ): Promise<User> {
+  async createUser({ email, password, userName }): Promise<User> {
     const exist = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: email }, { userName: userName }],
@@ -149,8 +145,6 @@ export class UsersService {
         userName: userName,
         email: email,
         password: await this.hashService.hash(password),
-        emailVerifyCode: verifyCode ?? null,
-        emailVerifyExpired: verifyExpired ?? null,
       },
     });
 
