@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Post,
   UseGuards,
@@ -145,14 +146,15 @@ export class AuthController {
     return { message: 'Password successfully changed. Check your email' };
   }
 
-  // @Get('sessions')
-  // @UseGuards(JwtAuthGuard)
-  //@ApiOperation({ summary: 'Get active user sessions' })
-  //@ApiResponse({ status: 200 })
-  // async getUserSessions(@User() user: { sub: number; email: string; role: string }){
-  //   async this.auth.getUserSessions(user.sub)
-  //Получить список активных устройств юзера
-  // }
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get active user sessions' })
+  @ApiResponse({ status: 200 })
+  async getUserSessions(@User() user: any) {
+    console.log(user);
+    await this.auth.getUserSessions(user.sub);
+    //Получить список активных устройств юзера
+  }
 
   // @Get('all-sessions')
   // @UseGuards(JwtAuthGuard)
@@ -161,12 +163,12 @@ export class AuthController {
   //АДМИН роут получить все активные сессии
   // }
 
-  @Post('logout-session/:id')
-  @UseGuards(JwtAuthGuard)
-  async logoutSession(@Param() deviceId: string, accessToken) {
-    await this.auth.logoutSession(deviceId, accessToken);
-    //Удаляем конкретную сессию
-  }
+  // @Post('logout-session/:id')
+  // @UseGuards(JwtAuthGuard)
+  // async logoutSession(@Param() deviceId: string, accessToken) {
+  //   await this.auth.logoutSession(deviceId, accessToken);
+  //   //Удаляем конкретную сессию
+  // }
 
   //@Roles("ADMIN")
   //@Post('logout-all-users')

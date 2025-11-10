@@ -260,5 +260,6 @@ export class AuthService {
     });
   }
 
+  async getUserSessions(id: number) {}
   async logoutSession(deviceId: string, accessToken: string) {}
 }
