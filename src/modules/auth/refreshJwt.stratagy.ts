@@ -17,12 +17,17 @@ export class RefreshJwtStrategy extends PassportStrategy(
       secretOrKey: cfg.get('JWT_REFRESH_SECRET') as string,
     });
   }
-  async validate(payload: any) {
+  async validate(payload: {
+    sub: number;
+    email: string;
+    role: 'ADMIN' | 'USER';
+    deviceId: string;
+  }) {
     return {
       sub: payload.sub,
       email: payload.email,
       role: payload.role,
-      jti: payload.jti,
+      deviceId: payload.deviceId,
     };
   }
 }

@@ -19,4 +19,33 @@ export class RedisService {
   async del(key: string) {
     await this.client.del(key);
   }
+
+  async getMany<T = unknown>(key: string): Promise<T[] | []> {
+    const pattern = `${key}:*`;
+    let cursor = '0';
+    const keys: string[] = [];
+
+    do {
+      const [newCursor, foundKeys] = await this.client.scan(
+        cursor,
+        'MATCH',
+        pattern,
+        'COUNT',
+        100,
+      );
+      cursor = newCursor;
+      keys.push(...foundKeys);
+    } while (cursor !== '0');
+
+    //const keys = await this.client.keys(key);
+
+    // if (!keys.length) return [];
+
+    // let arr = new Map();
+    // keys.forEach(async (val) => {
+    //   const data = await this.client.get(val);
+    //   arr.set(val, data);
+    // });
+    // return arr;
+  }
 }

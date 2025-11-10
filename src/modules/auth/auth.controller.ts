@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Param,
   Post,
   UseGuards,
   UseInterceptors,
@@ -24,6 +25,7 @@ import { User } from '@/common/decorators/userRefreshToken.decorator';
 import { RefreshToken } from '@/common/decorators/refreshToken.decorator';
 import { RefreshJwtAuthGuard } from '@/common/guards/refresh-jwt-auth.guard';
 import { EmailDto } from './dto/onlyEmail.dto';
+import { AccessToken } from '@/common/decorators/accessToken.decorator';
 
 @ApiTags('auth')
 @ApiCookieAuth('refresh_token')
@@ -68,8 +70,11 @@ export class AuthController {
   @ApiBearerAuth('access_token')
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200 })
-  async logout(@User() user: { sub: number; email: string; role: string }) {
-    await this.auth.logout(user.sub);
+  async logout(
+    @RefreshToken() token: string,
+    @User() user: { sub: number; email: string; role: string },
+  ) {
+    await this.auth.logout(user.sub, token);
     return { clear_refresh_cookie: true, message: 'User logged out' };
   }
 
@@ -150,20 +155,30 @@ export class AuthController {
   // }
 
   // @Get('all-sessions')
+  // @UseGuards(JwtAuthGuard)
   // async getAllSessions(){
   //   async this.auth.getAllSessions()
   //АДМИН роут получить все активные сессии
   // }
 
-  //Может либо админ, либо сам юзер
-  //@Post('logoutUser')
-  // async logoutAll(){
-  //   async this.auth.logoutUser()
-  //Просто удаляем все рефреш токены юзера
-  // }
-  //@Post('logout-all')
-  // async logoutAll(){
+  @Post('logout-session/:id')
+  @UseGuards(JwtAuthGuard)
+  async logoutSession(@Param() deviceId: string, accessToken) {
+    await this.auth.logoutSession(deviceId, accessToken);
+    //Удаляем конкретную сессию
+  }
+
+  //@Roles("ADMIN")
+  //@Post('logout-all-users')
+  // async logoutAllUsers(){
   //   async this.auth.logoutAll()
   //Завершить все сессии всех пользователей
+  // }
+
+  //@Roles("ADMIN")
+  //@Post('logout-user')
+  // async logoutAllUsers(@Param() userId:number){
+  //   async this.auth.logoutUser(userId)
+  //Завершить все сессии пользователя
   // }
 }

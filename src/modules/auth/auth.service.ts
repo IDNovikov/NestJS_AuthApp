@@ -28,7 +28,6 @@ type JWTpayload = {
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
     private jwt: JwtService,
     private cfg: ConfigService,
     private hash: HashService,
@@ -44,25 +43,11 @@ export class AuthService {
       secret: this.cfg.get('JWT_REFRESH_SECRET'),
     });
 
-    await this.redis.del(deviceId);
+    await this.redis.del(`user:${userId}:${deviceId}`);
 
     const hashed = await this.hash.hash(refreshToken);
 
-    //here new logic update
-
-    await this.prisma.refreshToken.update({
-      where: {
-        userId_deviceId: {
-          userId,
-          deviceId,
-        },
-      },
-      data: {
-        tokenHash: hashed,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-      },
-    });
-    await this.redis.set(deviceId, hashed, 604800);
+    await this.redis.set(`user:${userId}:${deviceId}`, hashed, 2592000);
   }
 
   private async generateTokens({
@@ -71,10 +56,11 @@ export class AuthService {
     role,
   }: JWTpayload): Promise<{ access_token: string; refresh_token: string }> {
     const deviceId = randomUUID();
+    const jti = randomUUID();
 
     const [access_token, refresh_token] = await Promise.all([
       this.jwt.signAsync(
-        { sub: userId, email, role },
+        { sub: userId, email, role, jti: jti },
         {
           secret: this.cfg.get('JWT_SECRET'),
           expiresIn: this.cfg.get('JWT_EXPIRES'),
@@ -110,7 +96,9 @@ export class AuthService {
     const codeExpired = new Date(Date.now() + 10 * 60 * 1000);
 
     const user = await this.user.createUser({ email, password, userName });
+
     console.log(code);
+
     await this.redis.set(email, { id: user.id, code, codeExpired }, 1800);
 
     console.log(user);
@@ -152,6 +140,7 @@ export class AuthService {
       isEmailVerified: true,
     });
 
+    await this.redis.del(email);
     const tokens = await this.login({
       userId: updatedUser.id,
       email: updatedUser.email,
@@ -177,6 +166,9 @@ export class AuthService {
     }
     const user = await this.user.getUserByEmail(email);
 
+    if (user.isEmailVerified) {
+      throw new ForbiddenException('Email is already verifiyed');
+    }
     const code = get6NumberCode();
     const codeExpired = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -191,7 +183,6 @@ export class AuthService {
       message: 'Check your email for verification code.',
     };
   }
-
   async login({ userId, email, role }: JWTpayload) {
     const tokens = await this.generateTokens({ userId, email, role });
 
@@ -200,38 +191,37 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
-    //make types
     const { sub, email, role, deviceId } = await this.jwt.verify(refreshToken, {
       secret: this.cfg.get('JWT_REFRESH_SECRET'),
     });
-    //add to jwt deviceId???
+    const token = await this.redis.get(`user:${sub}:${deviceId}`);
 
-    const token = await this.prisma.refreshToken.findUnique({
-      where: { userId_deviceId: { userId: sub, deviceId: deviceId } },
-    });
+    if (!token) throw new ForbiddenException('Mismatch token');
 
-    if (!token?.tokenHash) throw new ForbiddenException('Mismatch token');
-
-    const match = await this.hash.compare(refreshToken, token?.tokenHash);
+    if (typeof token !== 'string') {
+      throw new ForbiddenException('Mismatch token');
+    }
+    const match = await this.hash.compare(refreshToken, token);
 
     if (!match) throw new ForbiddenException('Invalid refresh token');
 
     const tokens = await this.generateTokens({
-      userId: token.userId,
+      userId: sub,
       email: email,
       role: role,
     });
 
-    await this.updateRefreshToken(token.userId, refreshToken);
+    await this.updateRefreshToken(sub, refreshToken);
     return tokens;
   }
 
-  async logout(userId: number) {
-    //shitcode
-    return await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
+  async logout(userId: number, token: string) {
+    const { sub, email, role, deviceId } = await this.jwt.verify(token, {
+      secret: this.cfg.get('JWT_REFRESH_SECRET'),
     });
+
+    await this.redis.set(`blacklist${'jti'}`, 'someValue', 100500);
+    return await this.redis.del(`user:${userId}:${deviceId}`);
   }
 
   async changePassword(id: number, oldPassword: string, newPassword: string) {
@@ -240,7 +230,6 @@ export class AuthService {
       throw new ConflictException(message);
     }
     const user = await this.user.getUserById(id, true);
-
     if (!user.password) {
       throw new ConflictException('Original password not found');
     }
@@ -248,20 +237,17 @@ export class AuthService {
     if (!isCorrectPass) {
       throw new ConflictException('Wrong old password');
     }
-
     const hashedPassword = await this.hash.hash(newPassword);
     if (hashedPassword === user.password) {
       throw new ConflictException('Passwords must be diff');
     }
     return await this.user.updateUser(id, {
       password: hashedPassword,
-      refreshToken: null,
     });
   }
 
   async getTempPass(email: string) {
     const user = await this.user.getUserByEmail(email);
-
     let tempPass = getRandomPass(10);
     const { isVaild } = checkPassword(tempPass);
     if (!isVaild) {
@@ -271,7 +257,8 @@ export class AuthService {
     const hashedPassword = await this.hash.hash(tempPass);
     return await this.user.updateUser(user.id, {
       password: hashedPassword,
-      refreshToken: null,
     });
   }
+
+  async logoutSession(deviceId: string, accessToken: string) {}
 }

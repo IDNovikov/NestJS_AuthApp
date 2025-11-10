@@ -25,11 +25,9 @@ export class UsersService {
     userName: true,
     role: true,
     status: true,
-    refreshToken: true,
     createdAt: true,
     updatedAt: true,
-    emailVerifyCode: true,
-    emailVerifyExpired: true,
+    isEmailVerified: true,
   } as const;
 
   async getUserById(
