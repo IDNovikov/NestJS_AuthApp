@@ -143,6 +143,7 @@ export class UsersService {
         userName: userName,
         email: email,
         password: await this.hashService.hash(password),
+        role: 'ADMIN',
       },
     });
 

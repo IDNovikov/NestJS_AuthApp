@@ -35,7 +35,7 @@ export class UsersController {
   //   getUserById(@User()user) {
   //     return this.usersService.getUserById(id);
   //   }
-
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({ status: 200, description: 'Return user data' })
@@ -47,7 +47,6 @@ export class UsersController {
   @ApiOperation({ summary: 'Get users by params' })
   @ApiResponse({ status: 200, description: 'Return users' })
   getUsers(@Query() q: UserQueryDto) {
-    console.log(q);
     return this.usersService.getUsers(q);
   }
 

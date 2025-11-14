@@ -22,11 +22,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     role: 'ADMIN' | 'USER';
     jti: string;
   }) {
-    console.log(payload);
-    // const blockedToken = await this.redis.get(`blacklist${payload.jti}`);
-    // if (blockedToken) {
-    //   throw new ForbiddenException('User is blocked');
-    // }
     return {
       sub: payload.sub,
       email: payload.email,

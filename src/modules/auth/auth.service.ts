@@ -4,7 +4,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../core/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { HashService } from './hash.service';
@@ -17,13 +16,24 @@ import {
 import { MailService } from '../mail/mail.service';
 import { RedisService } from '../core/redis/redis.service';
 import { randomUUID } from 'crypto';
-import { days } from '@nestjs/throttler';
+import { ISessionData } from '@/common/decorators/sessionData.decorator';
 
 type JWTpayload = {
   userId: number;
   email: string;
   role: 'ADMIN' | 'USER';
 };
+
+interface refreshTokenData {
+  hash: string;
+  jti: string;
+  sessionData: ISessionData;
+  createdAt: string;
+}
+
+function redisRefreshString(id: number, deviceId: string) {
+  return `refreshToken:${id}:${deviceId}`;
+}
 
 @Injectable()
 export class AuthService {
@@ -36,38 +46,48 @@ export class AuthService {
     private redis: RedisService,
   ) {}
 
-  private async updateRefreshToken(userId: number, refreshToken: string) {
+  private async updateRefreshToken(
+    userId: number,
+    deviceId: string,
+    jti: string,
+    refreshToken: string,
+    sessionData: ISessionData,
+  ) {
     ///////ТУТ КАКАЯ-ТО ПОЛНАЯ ЖОПА С ДАТАМИ И ВРЕМЕНЕМ
-
-    const { sub, email, role, deviceId } = await this.jwt.verify(refreshToken, {
-      secret: this.cfg.get('JWT_REFRESH_SECRET'),
-    });
-
-    await this.redis.del(`user:${userId}:${deviceId}`);
 
     const hashed = await this.hash.hash(refreshToken);
 
-    await this.redis.set(`user:${userId}:${deviceId}`, hashed, 2592000);
+    await this.redis.set(
+      redisRefreshString(userId, deviceId),
+      {
+        hash: hashed,
+        jti: jti,
+        sessionData: sessionData,
+        createdAt: new Date(),
+      },
+      2592000,
+    );
   }
 
-  private async generateTokens({
-    userId,
-    email,
-    role,
-  }: JWTpayload): Promise<{ access_token: string; refresh_token: string }> {
+  private async generateTokens({ userId, email, role }: JWTpayload): Promise<{
+    access_token: string;
+    refresh_token: string;
+    deviceId: string;
+    jti: string;
+  }> {
     const deviceId = randomUUID();
     const jti = randomUUID();
 
     const [access_token, refresh_token] = await Promise.all([
       this.jwt.signAsync(
-        { sub: userId, email, role, jti: jti },
+        { sub: userId, email, role, jti },
         {
           secret: this.cfg.get('JWT_SECRET'),
           expiresIn: this.cfg.get('JWT_EXPIRES'),
         },
       ),
       this.jwt.signAsync(
-        { sub: userId, email, role, deviceId: deviceId },
+        { sub: userId, email, role, deviceId },
         {
           secret: this.cfg.get('JWT_REFRESH_SECRET'),
           expiresIn: this.cfg.get('JWT_REFRESH_EXPIRES'),
@@ -75,16 +95,40 @@ export class AuthService {
       ),
     ]);
 
-    return { access_token, refresh_token };
+    return { access_token, refresh_token, deviceId, jti };
   }
 
-  async validateUser(email: string, password: string) {
+  //FACADE
+  async validateUser(
+    email: string,
+    password: string,
+    token: string | undefined | null,
+    sessionData: ISessionData,
+  ) {
+    if (token) {
+      throw new ForbiddenException('Delete cookies or refresh tokens');
+    }
     const user = await this.user.getUserByEmail(email, true);
     if (!user || !user.email || !user.password || user.status !== 'ACTIVE')
       throw new UnauthorizedException('Invalid email');
     const valid = await this.hash.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Wrong password');
-    return { id: user.id, email: user.email, role: user.role };
+
+    const { refresh_token, access_token } = await this.login(
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      sessionData,
+    );
+
+    return {
+      message: 'Login successful',
+      user: { id: user.id, email: user.email, role: user.role },
+      access_token: access_token,
+      refresh_token: refresh_token,
+    };
   }
 
   async registrate(userName: string, email: string, password: string) {
@@ -97,11 +141,7 @@ export class AuthService {
 
     const user = await this.user.createUser({ email, password, userName });
 
-    console.log(code);
-
     await this.redis.set(email, { id: user.id, code, codeExpired }, 1800);
-
-    console.log(user);
 
     await this.mail.sendVerificationMail(email, code);
 
@@ -111,8 +151,8 @@ export class AuthService {
       message: 'User created. Check your email for verification code.',
     };
   }
-
-  async verifyEmail(email: string, code: string) {
+  //FACADE
+  async verifyEmail(email: string, code: string, sessionData: ISessionData) {
     const validData = await this.redis.get<{
       id: number;
       code: string;
@@ -141,16 +181,22 @@ export class AuthService {
     });
 
     await this.redis.del(email);
-    const tokens = await this.login({
-      userId: updatedUser.id,
-      email: updatedUser.email,
-      role: updatedUser.role,
-    });
+    const tokens = await this.login(
+      {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      },
+      sessionData,
+    );
     return {
-      userId: updatedUser.id,
-      email: updatedUser.email,
-      role: updatedUser.role,
-      tokens,
+      user: {
+        userId: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      },
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
     };
   }
 
@@ -172,7 +218,6 @@ export class AuthService {
     const code = get6NumberCode();
     const codeExpired = new Date(Date.now() + 10 * 60 * 1000);
 
-    console.log(code);
     await this.redis.set(email, { id: user.id, code, codeExpired }, 1800);
 
     await this.mail.sendVerificationMail(email, code);
@@ -183,45 +228,66 @@ export class AuthService {
       message: 'Check your email for verification code.',
     };
   }
-  async login({ userId, email, role }: JWTpayload) {
-    const tokens = await this.generateTokens({ userId, email, role });
 
-    await this.updateRefreshToken(userId, tokens.refresh_token);
-    return tokens;
+  //FACADE
+  async login({ userId, email, role }: JWTpayload, sessionData: ISessionData) {
+    const { access_token, refresh_token, deviceId, jti } =
+      await this.generateTokens({
+        userId,
+        email,
+        role,
+      });
+    console.log(
+      'LOGIN GENERATED TOKENS:',
+
+      deviceId,
+    );
+
+    await this.updateRefreshToken(
+      userId,
+      deviceId,
+      jti,
+      refresh_token,
+      sessionData,
+    );
+    return { access_token, refresh_token };
   }
 
-  async refreshTokens(refreshToken: string) {
+  //FACADE
+  async refreshTokens(refreshToken: string, sessionData: ISessionData) {
     const { sub, email, role, deviceId } = await this.jwt.verify(refreshToken, {
       secret: this.cfg.get('JWT_REFRESH_SECRET'),
     });
-    const token = await this.redis.get(`user:${sub}:${deviceId}`);
+    const data = await this.redis.get<refreshTokenData>(
+      redisRefreshString(sub, deviceId),
+    );
 
-    if (!token) throw new ForbiddenException('Mismatch token');
+    if (!data?.hash) throw new ForbiddenException('Mismatch token');
 
-    if (typeof token !== 'string') {
-      throw new ForbiddenException('Mismatch token');
-    }
-    const match = await this.hash.compare(refreshToken, token);
+    const match = await this.hash.compare(refreshToken, data?.hash);
 
     if (!match) throw new ForbiddenException('Invalid refresh token');
+
+    await this.redis.del(redisRefreshString(sub, deviceId));
 
     const tokens = await this.generateTokens({
       userId: sub,
       email: email,
       role: role,
     });
+    await this.updateRefreshToken(
+      sub,
+      tokens.deviceId,
+      tokens.jti,
+      tokens.refresh_token,
+      sessionData,
+    );
 
-    await this.updateRefreshToken(sub, refreshToken);
-    return tokens;
-  }
-
-  async logout(userId: number, token: string) {
-    const { sub, email, role, deviceId } = await this.jwt.verify(token, {
-      secret: this.cfg.get('JWT_REFRESH_SECRET'),
-    });
-
-    await this.redis.set(`blacklist${'jti'}`, 'someValue', 100500);
-    return await this.redis.del(`user:${userId}:${deviceId}`);
+    return {
+      message: 'Tokens refreshed',
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    };
   }
 
   async changePassword(id: number, oldPassword: string, newPassword: string) {
@@ -241,9 +307,10 @@ export class AuthService {
     if (hashedPassword === user.password) {
       throw new ConflictException('Passwords must be diff');
     }
-    return await this.user.updateUser(id, {
+    await this.user.updateUser(id, {
       password: hashedPassword,
     });
+    return { message: 'Password changed succsessed' };
   }
 
   async getTempPass(email: string) {
@@ -255,11 +322,99 @@ export class AuthService {
     }
     await this.mail.sendTempPass(email, tempPass);
     const hashedPassword = await this.hash.hash(tempPass);
-    return await this.user.updateUser(user.id, {
+    await this.user.updateUser(user.id, {
       password: hashedPassword,
     });
+
+    return { message: 'Password successfully changed. Check your email' };
   }
 
-  async getUserSessions(id: number) {}
-  async logoutSession(deviceId: string, accessToken: string) {}
+  async getUserSessions(
+    id: number,
+  ): Promise<{ deviceId: string | null; session: ISessionData | null }[]> {
+    const data = await this.redis.getMany<refreshTokenData>(`refreshToken`);
+    const sessions = data.map((el) => {
+      let data: { deviceId: string | null; session: ISessionData | null } = {
+        deviceId: null,
+        session: null,
+      };
+      if (el.key) {
+        data.deviceId = el.key.split(':')[2];
+      }
+      if (el.value?.sessionData) {
+        data.session = el.value?.sessionData;
+      }
+
+      return data;
+    });
+    return sessions;
+  }
+
+  async getAllSessionsByAdmin(): Promise<
+    { key: string | null; session: ISessionData | null }[]
+  > {
+    const data = await this.redis.getMany<refreshTokenData>(`refreshToken`);
+    const sessions = data.map((el) => {
+      let data: { key: string | null; session: ISessionData | null } = {
+        key: null,
+        session: null,
+      };
+      if (el.value?.sessionData) {
+        data.session = el.value?.sessionData;
+      }
+      if (el.key) {
+        data.key = el.key;
+      }
+      return data;
+    });
+    return sessions;
+  }
+
+  //logout
+  async logout(userId: number, token: string, jti: string) {
+    const { deviceId } = await this.jwt.verify(token, {
+      secret: this.cfg.get('JWT_REFRESH_SECRET'),
+    });
+    await this.redis.set(`blacklist:${jti}`, 1, 100500);
+
+    await this.redis.del(`refreshToken:${userId}:${deviceId}`);
+    return { clear_refresh_cookie: true, message: 'User logged out' };
+  }
+
+  async logoutUserSessionsByAdmin(id: number) {
+    const data = await this.redis.getMany<refreshTokenData>(
+      `refreshToken:${id}`,
+    );
+
+    data.forEach(async (value) => {
+      await this.redis.set(`blacklist:${value.value?.jti}`, 1, 100500);
+    });
+
+    await this.redis.delMany(`refreshToken:${id}`);
+    return { message: 'All users sessions canceled' };
+  }
+
+  async logoutAllSessionsByAdmin() {
+    const data = await this.redis.getMany<refreshTokenData>(`refreshToken`);
+
+    data.forEach(async (value) => {
+      await this.redis.set(`blacklist:${value.value?.jti}`, 1, 100500);
+    });
+
+    await this.redis.delMany(`refreshToken`);
+    return { message: 'All sessions canceled' };
+  }
+
+  async logoutSession(id: number, deviceId: string) {
+    const sessionKey = redisRefreshString(id, deviceId);
+    const session = await this.redis.get<refreshTokenData>(sessionKey);
+    if (!session) {
+      return { message: `Session ${deviceId} is not exist` };
+    }
+    await this.redis.set(`blacklist:${session.jti}`, 1, 100500);
+
+    await this.redis.del(sessionKey);
+
+    return { message: `Session ${deviceId} successful deleted` };
+  }
 }

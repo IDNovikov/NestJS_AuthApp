@@ -3,7 +3,9 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Post,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -26,7 +28,13 @@ import { User } from '@/common/decorators/userRefreshToken.decorator';
 import { RefreshToken } from '@/common/decorators/refreshToken.decorator';
 import { RefreshJwtAuthGuard } from '@/common/guards/refresh-jwt-auth.guard';
 import { EmailDto } from './dto/onlyEmail.dto';
-import { AccessToken } from '@/common/decorators/accessToken.decorator';
+import {
+  ISessionData,
+  SessionData,
+} from '@/common/decorators/sessionData.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { DeleteSessionDTO } from './dto/logoutSession.dto';
 
 @ApiTags('auth')
 @ApiCookieAuth('refresh_token')
@@ -45,38 +53,18 @@ export class AuthController {
   @Post('verify-email')
   @ApiOperation({ summary: 'Verify new users email' })
   @ApiResponse({ status: 200, description: 'Return user data and tokens' })
-  async verify(@Body() dto: VerifyDto) {
-    const { userId, email, role, tokens } = await this.auth.verifyEmail(
-      dto.email,
-      dto.congfirmedCode,
-    );
-
-    return {
-      user: { userId, email, role },
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    };
+  async verify(
+    @Body() dto: VerifyDto,
+    @SessionData() sessionData: ISessionData,
+  ) {
+    return this.auth.verifyEmail(dto.email, dto.congfirmedCode, sessionData);
   }
 
   @Post('get-new-verify-code')
   @ApiOperation({ summary: 'Get new code' })
   @ApiResponse({ status: 200, description: 'Only status and message' })
   async getNewVerificationCode(@Body() dto: EmailDto) {
-    return await this.auth.getNewVerificationCode(dto.email);
-  }
-
-  @UseInterceptors(CookieInterceptor)
-  @Post('logout')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access_token')
-  @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200 })
-  async logout(
-    @RefreshToken() token: string,
-    @User() user: { sub: number; email: string; role: string },
-  ) {
-    await this.auth.logout(user.sub, token);
-    return { clear_refresh_cookie: true, message: 'User logged out' };
+    return this.auth.getNewVerificationCode(dto.email);
   }
 
   @UseInterceptors(CookieInterceptor)
@@ -95,21 +83,12 @@ export class AuthController {
       },
     },
   })
-  async login(@Body() dto: LoginDto) {
-    const user = await this.auth.validateUser(dto.email, dto.password);
-
-    const tokens = await this.auth.login({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    return {
-      message: 'Login successful',
-      user: { id: user.id, email: user.email, role: user.role },
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    };
+  async login(
+    @Body() dto: LoginDto,
+    @SessionData() sessionData: ISessionData,
+    @RefreshToken() token: string,
+  ) {
+    return this.auth.validateUser(dto.email, dto.password, token, sessionData);
   }
 
   @UseInterceptors(CookieInterceptor)
@@ -117,13 +96,11 @@ export class AuthController {
   @UseGuards(RefreshJwtAuthGuard)
   @ApiOperation({ summary: 'Access and refresh tokens' })
   @ApiResponse({ status: 200 })
-  async refresh(@RefreshToken() token: string) {
-    const tokens = await this.auth.refreshTokens(token);
-    return {
-      message: 'Tokens refreshed',
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    };
+  async refresh(
+    @RefreshToken() token: string,
+    @SessionData() sessionData: ISessionData,
+  ) {
+    return this.auth.refreshTokens(token, sessionData);
   }
 
   @Post('change-password')
@@ -134,16 +111,14 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
     @User() user: { sub: number; email: string; role: string },
   ) {
-    await this.auth.changePassword(user.sub, dto.oldPassword, dto.newPassword);
-    return { message: 'Password changed succsessed' };
+    return this.auth.changePassword(user.sub, dto.oldPassword, dto.newPassword);
   }
 
   @Post('forgot-password')
   @ApiOperation({ summary: 'Get temp pass from email' })
   @ApiResponse({ status: 200 })
   async getTempPass(@Body() dto: GetTempPassDto) {
-    await this.auth.getTempPass(dto.email);
-    return { message: 'Password successfully changed. Check your email' };
+    return this.auth.getTempPass(dto.email);
   }
 
   @Get('sessions')
@@ -151,36 +126,47 @@ export class AuthController {
   @ApiOperation({ summary: 'Get active user sessions' })
   @ApiResponse({ status: 200 })
   async getUserSessions(@User() user: any) {
-    console.log(user);
-    await this.auth.getUserSessions(user.sub);
-    //Получить список активных устройств юзера
+    return this.auth.getUserSessions(user.sub);
   }
 
-  // @Get('all-sessions')
-  // @UseGuards(JwtAuthGuard)
-  // async getAllSessions(){
-  //   async this.auth.getAllSessions()
-  //АДМИН роут получить все активные сессии
-  // }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('all-sessions')
+  async getAllSessionsByAdmin() {
+    return this.auth.getAllSessionsByAdmin();
+  }
 
-  // @Post('logout-session/:id')
-  // @UseGuards(JwtAuthGuard)
-  // async logoutSession(@Param() deviceId: string, accessToken) {
-  //   await this.auth.logoutSession(deviceId, accessToken);
-  //   //Удаляем конкретную сессию
-  // }
+  //logout
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post('logout-user/:id')
+  async logoutUsersSessionsByAdmin(@Param('id', ParseIntPipe) userId: number) {
+    return this.auth.logoutUserSessionsByAdmin(userId);
+  }
 
-  //@Roles("ADMIN")
-  //@Post('logout-all-users')
-  // async logoutAllUsers(){
-  //   async this.auth.logoutAll()
-  //Завершить все сессии всех пользователей
-  // }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post('logout-all')
+  async logoutAllSessionsByAdmin() {
+    return this.auth.logoutAllSessionsByAdmin();
+  }
 
-  //@Roles("ADMIN")
-  //@Post('logout-user')
-  // async logoutAllUsers(@Param() userId:number){
-  //   async this.auth.logoutUser(userId)
-  //Завершить все сессии пользователя
-  // }
+  @Post('logout-session')
+  @UseGuards(JwtAuthGuard)
+  async logoutSession(@Query() params: DeleteSessionDTO) {
+    return this.auth.logoutSession(Number(params.id), params.deviceId);
+  }
+
+  @UseInterceptors(CookieInterceptor)
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access_token')
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({ status: 200 })
+  async logout(
+    @RefreshToken() token: string,
+    @User() user: { sub: number; email: string; role: string; jti: string },
+  ) {
+    return this.auth.logout(user.sub, token, user.jti);
+  }
 }
