@@ -8,5 +8,5 @@ export class VerifyDto {
   @IsNotEmpty()
   @MinLength(6)
   @MaxLength(6)
-  congfirmedCode!: string;
+  confirmCode!: string;
 }

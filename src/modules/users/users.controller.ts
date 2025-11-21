@@ -20,9 +20,9 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { Roles } from '@/common/decorators/roles.decorator';
-import { RolesGuard } from '@/common/guards/roles.guard';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { Roles } from '@/modules/auth/shared/decorators/roles.decorator';
+import { RolesGuard } from '@/modules/auth/shared/guards/roles.guard';
+import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -54,7 +54,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user' })
   @ApiResponse({ status: 200, description: 'User updated' })
   update(@Param('id') id: number, @Body() body: UpdateUserDto) {
-    return this.usersService.updateUser(id, body);
+    return this.usersService.updateUser({ id }, body);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

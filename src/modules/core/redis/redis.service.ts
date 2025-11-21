@@ -13,6 +13,7 @@ export class RedisService {
     const v = await this.client.get(key);
     return v ? (JSON.parse(v) as T) : null;
   }
+
   async set(key: string, value: unknown, ttlSec = 60) {
     await this.client.set(key, JSON.stringify(value), 'EX', ttlSec);
   }

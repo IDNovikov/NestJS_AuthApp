@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { Prisma, User } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
+import { safeSelect, SafeUser } from './types/user.types';
 
 @Injectable()
 export class UsersService {
@@ -18,17 +19,6 @@ export class UsersService {
     private hashService: HashService,
     private redis: RedisService,
   ) {}
-
-  private readonly safeSelect = {
-    id: true,
-    email: true,
-    userName: true,
-    role: true,
-    status: true,
-    createdAt: true,
-    updatedAt: true,
-    isEmailVerified: true,
-  } as const;
 
   async getUserById(
     id: number,
@@ -44,9 +34,7 @@ export class UsersService {
 
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: withPassword
-        ? { ...this.safeSelect, password: true }
-        : this.safeSelect,
+      select: withPassword ? { ...safeSelect, password: true } : safeSelect,
     });
 
     if (!user) {
@@ -63,9 +51,7 @@ export class UsersService {
   ) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: withPassword
-        ? { ...this.safeSelect, password: true }
-        : this.safeSelect,
+      select: withPassword ? { ...safeSelect, password: true } : safeSelect,
     });
     if (!user) {
       throw new NotFoundException({ message: 'User not found' });
@@ -98,7 +84,7 @@ export class UsersService {
         orderBy: { [sortBy]: order },
         skip: (page - 1) * limit,
         take: limit,
-        select: this.safeSelect,
+        select: safeSelect,
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -115,13 +101,18 @@ export class UsersService {
     return user;
   }
   //Тогда тут не должен быть только UpdateUserDto, но dto для замены ключа телеграм, замены пароля и тд. Типизация как-то должна быть динамческой и зависть от контекста в котором используется сервис
-  async updateUser(id: number, dto: Prisma.UserUpdateInput) {
+  async updateUser(
+    identifier: { id: number } | { email: string },
+    dto: Prisma.UserUpdateInput,
+  ): Promise<SafeUser> {
     const updatedUser = await this.prisma.user.update({
-      where: { id },
+      where: identifier,
       data: dto,
-      select: this.safeSelect,
+      select: safeSelect,
     });
-    await this.redis.del(`user:${id}`);
+    if (!updatedUser)
+      throw new NotFoundException({ message: 'User was not updated' });
+    await this.redis.del(`user:${updatedUser.id}`);
     return updatedUser;
   }
 
@@ -150,4 +141,16 @@ export class UsersService {
     await this.redis.del(`user:${user.id}`);
     return user;
   }
+
+  async deleteUnverifiedUsers(): Promise<number> {
+    const EXPIRATION_MINUTES = 30;
+
+    const expiredDate = new Date(Date.now() - EXPIRATION_MINUTES * 60000);
+    const deleted = await this.prisma.user.deleteMany({
+      where: { isEmailVerified: false, createdAt: { lt: expiredDate } },
+    });
+    return deleted.count;
+  }
+
+  async makeAdminUser() {}
 }

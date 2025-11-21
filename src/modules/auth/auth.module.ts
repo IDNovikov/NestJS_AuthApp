@@ -5,11 +5,23 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshJwtStrategy } from './refreshJwt.stratagy';
 import { RedisModule } from '../core/redis/redis.module';
+import { AuthController } from './auth/auth.controller';
+import { AdminController } from './admin/admin.controller';
+import { PasswordController } from './password/password.controller';
+import { RegistrationController } from './registration/registration.controller';
+import { SessionsController } from './session/session.controller';
+import { AuthService } from './auth/auth.service';
+import { PasswordService } from './password/password.service';
+import { RegistrationService } from './registration/registration.service';
+import { SessionsService } from './session/session.service';
+import { AuthFacade } from './auth/auth.facade';
+import { RegistrationFacade } from './registration/registration.facade';
+import { AdminFacade } from './admin/admin.facade';
+import { PasswordFacade } from './password/password.facade';
+import { SessionFacade } from './session/session.facade';
 
 @Global()
 @Module({
@@ -28,11 +40,28 @@ import { RedisModule } from '../core/redis/redis.module';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [
+    AuthController,
+    AdminController,
+    PasswordController,
+    RegistrationController,
+    SessionsController,
+  ],
   providers: [
     AuthService,
+    PasswordService,
+    RegistrationService,
+    SessionsService,
     JwtStrategy,
     RefreshJwtStrategy,
+    HashService,
+    JwtModule,
+    PassportModule,
+    AuthFacade,
+    AdminFacade,
+    RegistrationFacade,
+    PasswordFacade,
+    SessionFacade,
     {
       provide: HashService,
       useFactory: (config: ConfigService) =>
@@ -43,6 +72,15 @@ import { RedisModule } from '../core/redis/redis.module';
       inject: [ConfigService],
     },
   ],
-  exports: [HashService, JwtModule, PassportModule],
+  exports: [
+    HashService,
+    JwtModule,
+    PassportModule,
+    AuthFacade,
+    AdminFacade,
+    RegistrationFacade,
+    PasswordFacade,
+    SessionFacade,
+  ],
 })
 export class AuthModule {}

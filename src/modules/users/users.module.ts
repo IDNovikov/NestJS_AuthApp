@@ -5,11 +5,22 @@ import { AuthModule } from '../auth/auth.module';
 import { RedisModule } from '../core/redis/redis.module';
 import { PrismaService } from '../core/prisma/prisma.service';
 import { UserResolver } from './users.resolver';
+import { ScheduleModule } from '@nestjs/schedule';
+import { UnVerifiedUsersCleanUpCron } from './cron/unVerifiedUsersCleanUp.job';
 
 @Module({
-  imports: [forwardRef(() => AuthModule), RedisModule],
+  imports: [
+    forwardRef(() => AuthModule),
+    RedisModule,
+    ScheduleModule.forRoot(),
+  ],
   controllers: [UsersController],
-  providers: [UsersService, PrismaService, UserResolver],
+  providers: [
+    UsersService,
+    PrismaService,
+    UserResolver,
+    UnVerifiedUsersCleanUpCron,
+  ],
   exports: [UsersService],
 })
 export class UserModule {}
