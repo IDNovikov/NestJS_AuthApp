@@ -11,7 +11,7 @@ import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/shared/guards/roles.guard';
 import { AdminFacade } from './admin.facade';
 import { ApiTags } from '@nestjs/swagger';
-import { UseSwagger } from '../shared/decorators/swagger.decorator';
+import { UseSwagger } from '../../../common/decorators/swagger.decorator';
 import { AuthSwagger } from '../docs/authSwagger.docs';
 
 @ApiTags('AdminAuth')

@@ -1,12 +1,12 @@
 import { Body, Controller, Post, Put, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
-import { User } from '@/modules/auth/shared/decorators/userRefreshToken.decorator';
+import { User } from '@/common/decorators/userRefreshToken.decorator';
 import { ChangePassDto } from './dto/changePass.dto';
 import { GetTempPassDto } from './dto/getTempPass.dto';
 import { PasswordFacade } from './password.facade';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthSwagger } from '../docs/authSwagger.docs';
-import { UseSwagger } from '../shared/decorators/swagger.decorator';
+import { UseSwagger } from '../../../common/decorators/swagger.decorator';
 import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Password')

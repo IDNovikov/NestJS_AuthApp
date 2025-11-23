@@ -11,13 +11,13 @@ import { RefreshToken } from '@/modules/auth/shared/decorators/refreshToken.deco
 import { SessionData } from '@/modules/auth/shared/decorators/sessionData.decorator';
 import { CookieInterceptor } from '@/common/interceptors/cookie.interceptor';
 import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
-import { User } from '@/modules/auth/shared/decorators/userRefreshToken.decorator';
+import { User } from '@/common/decorators/userRefreshToken.decorator';
 import { RefreshJwtAuthGuard } from '@/modules/auth/shared/guards/refresh-jwt-auth.guard';
 import { ISessionData } from '@/modules/auth/shared/types/session.types';
 import { LoginDto } from './dto/login.dto';
 import { AuthFacade } from './auth.facade';
 import { ApiTags } from '@nestjs/swagger';
-import { UseSwagger } from '../shared/decorators/swagger.decorator';
+import { UseSwagger } from '../../../common/decorators/swagger.decorator';
 import { AuthSwagger } from '../docs/authSwagger.docs';
 import { Throttle } from '@nestjs/throttler';
 

@@ -6,11 +6,9 @@ import {
 import { PrismaService } from '../core/prisma/prisma.service';
 import { HashService } from '../auth/hash.service';
 import { RedisService } from '../core/redis/redis.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { Prisma, User } from '@prisma/client';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
-import { safeSelect, SafeUser } from './types/user.types';
+import { UserMapper } from './mappers/users.mapper';
 
 @Injectable()
 export class UsersService {
@@ -20,49 +18,25 @@ export class UsersService {
     private redis: RedisService,
   ) {}
 
-  async getUserById(
-    id: number,
-    withPassword: true,
-  ): Promise<User & { password: string }>;
-  async getUserById(
-    id: number,
-    withPassword?: false,
-  ): Promise<Omit<User, 'password'>>;
-  async getUserById(id: number, withPassword = false) {
-    const cached = await this.redis.get<User>(`user:${id}`);
-    if (cached) return cached;
+  async getUser(identifier: { id: number } | { email: string }): Promise<User> {
+    if ('id' in identifier) {
+      const cached = await this.redis.get<User>(`user:${identifier.id}`);
+      if (cached) return cached;
+    }
 
     const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: withPassword ? { ...safeSelect, password: true } : safeSelect,
+      where: identifier,
     });
-
     if (!user) {
       throw new NotFoundException({ message: 'User not found' });
     }
 
-    await this.redis.set(`user:${id}`, user);
+    await this.redis.set(`user:${user.id}`, UserMapper.safeUser(user));
     return user;
   }
 
-  async getUserByEmail<T extends boolean = false>(
-    email: string,
-    withPassword?: T,
-  ) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      select: withPassword ? { ...safeSelect, password: true } : safeSelect,
-    });
-    if (!user) {
-      throw new NotFoundException({ message: 'User not found' });
-    }
-    await this.redis.set(`user:${user.id}`, user);
-    return user as T extends true
-      ? typeof user & { password: string }
-      : typeof user;
-  }
   async getUsers(q: UserQueryDto): Promise<{
-    items: Omit<User, 'password'>[];
+    items: User[];
     total: number;
     page: number;
     limit: number;
@@ -84,12 +58,11 @@ export class UsersService {
         orderBy: { [sortBy]: order },
         skip: (page - 1) * limit,
         take: limit,
-        select: safeSelect,
       }),
       this.prisma.user.count({ where }),
     ]);
 
-    return { items: items as any, total, page, limit };
+    return { items, total, page, limit };
   }
 
   async deleteUser(id: number): Promise<User> {
@@ -100,15 +73,14 @@ export class UsersService {
     await this.redis.del(`user:${id}`);
     return user;
   }
-  //Тогда тут не должен быть только UpdateUserDto, но dto для замены ключа телеграм, замены пароля и тд. Типизация как-то должна быть динамческой и зависть от контекста в котором используется сервис
+  //TODO: переработь ДТОшку
   async updateUser(
     identifier: { id: number } | { email: string },
     dto: Prisma.UserUpdateInput,
-  ): Promise<SafeUser> {
+  ): Promise<User> {
     const updatedUser = await this.prisma.user.update({
       where: identifier,
       data: dto,
-      select: safeSelect,
     });
     if (!updatedUser)
       throw new NotFoundException({ message: 'User was not updated' });
@@ -134,11 +106,11 @@ export class UsersService {
         userName: userName,
         email: email,
         password: await this.hashService.hash(password),
-        role: 'ADMIN',
+        role: 'USER',
       },
     });
 
-    await this.redis.del(`user:${user.id}`);
+    await this.redis.set(`user:${user.id}`, UserMapper.safeUser(user));
     return user;
   }
 
@@ -151,6 +123,4 @@ export class UsersService {
     });
     return deleted.count;
   }
-
-  async makeAdminUser() {}
 }

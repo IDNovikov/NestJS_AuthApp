@@ -7,7 +7,7 @@ import { ISessionData } from '@/modules/auth/shared/types/session.types';
 import { EmailDto } from './dto/email.dto';
 import { RegistrationFacade } from './registration.facade';
 import { ApiTags } from '@nestjs/swagger';
-import { UseSwagger } from '../shared/decorators/swagger.decorator';
+import { UseSwagger } from '../../../common/decorators/swagger.decorator';
 import { AuthSwagger } from '../docs/authSwagger.docs';
 import { Throttle } from '@nestjs/throttler';
 

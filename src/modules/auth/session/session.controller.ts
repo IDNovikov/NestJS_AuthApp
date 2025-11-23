@@ -5,7 +5,7 @@ import { RefreshToken } from '@/modules/auth/shared/decorators/refreshToken.deco
 import { SessionFacade } from './session.facade';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthSwagger } from '../docs/authSwagger.docs';
-import { UseSwagger } from '../shared/decorators/swagger.decorator';
+import { UseSwagger } from '../../../common/decorators/swagger.decorator';
 
 @ApiTags('Sessions')
 @Controller('sessions')
@@ -25,7 +25,6 @@ export class SessionsController {
     @RefreshToken() token: string,
     @Query() params: DeleteSessionDTO,
   ) {
-    console.log(params.deviceId);
     return this.facade.logoutSession(token, params.deviceId);
   }
 }

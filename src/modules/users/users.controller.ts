@@ -11,68 +11,72 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Roles } from '@/modules/auth/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/modules/auth/shared/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
+import { UserMapper } from './mappers/users.mapper';
+import { UseSwagger } from '@/common/decorators/swagger.decorator';
+import { UsersSwagger } from './docs/userSwagger.docs';
+import { User } from '@/common/decorators/userRefreshToken.decorator';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  // @Get('me')
-  //   @ApiOperation({ summary: 'Get user by id' })
-  //   @ApiResponse({ status: 200, description: 'Return user data' })
-  //   getUserById(@User()user) {
-  //     return this.usersService.getUserById(id);
-  //   }
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  @UseSwagger(...UsersSwagger.getMe)
+  async getMe(@User() userId: { sub: number }) {
+    const user = await this.usersService.getUser({ id: userId.sub });
+    return UserMapper.privateUser(user);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  @ApiOperation({ summary: 'Get user by id' })
-  @ApiResponse({ status: 200, description: 'Return user data' })
-  getUserById(@Param('id') id: number) {
-    return this.usersService.getUserById(id);
+  @UseSwagger(...UsersSwagger.GetUserById)
+  async getUserById(@Param('id') id: number) {
+    const user = await this.usersService.getUser({ id });
+    return UserMapper.safeUser(user);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get()
-  @ApiOperation({ summary: 'Get users by params' })
-  @ApiResponse({ status: 200, description: 'Return users' })
-  getUsers(@Query() q: UserQueryDto) {
-    return this.usersService.getUsers(q);
-  }
+  @UseSwagger(...UsersSwagger.GetUsers)
+  async getUsers(@Query() q: UserQueryDto) {
+    const { items, total, page, limit } = await this.usersService.getUsers(q);
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Update user' })
-  @ApiResponse({ status: 200, description: 'User updated' })
-  update(@Param('id') id: number, @Body() body: UpdateUserDto) {
-    return this.usersService.updateUser({ id }, body);
+    return {
+      items: items.map(UserMapper.safeUser),
+      total,
+      page,
+      limit,
+    };
+  }
+  @UseGuards(JwtAuthGuard)
+  @Put()
+  @UseSwagger(...UsersSwagger.UpdateUser)
+  async update(@User() userId: { sub: number }, @Body() body: UpdateUserDto) {
+    const user = await this.usersService.updateUser({ id: userId.sub }, body);
+    return UserMapper.privateUser(user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete user' })
-  @ApiResponse({
-    status: 200,
-    description: 'User deleted',
-  })
-  deleteUser(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.deleteUser(id);
+  @UseSwagger(...UsersSwagger.DeleteUser)
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.usersService.deleteUser(id);
+    return UserMapper.privateUser(user);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ summary: 'Create new user' })
-  @ApiResponse({ status: 200, description: 'Return user data' })
-  createUser(@Body() dto: CreateUserDto) {
-    return this.usersService.createUser(dto);
+  @UseSwagger(...UsersSwagger.CreateUser)
+  async createUser(@Body() dto: CreateUserDto) {
+    const user = await this.usersService.createUser(dto);
+    return UserMapper.privateUser(user);
   }
 }
