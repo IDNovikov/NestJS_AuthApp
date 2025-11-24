@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { CoreModule } from './modules/core/core.module';
 import { UserModule } from './modules/users/users.module';
 import { ConfigModule } from '@nestjs/config';
@@ -38,9 +36,7 @@ import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters
       playground: true,
     }),
   ],
-  controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: AuthUserReaderPort,
       useExisting: AuthUserReaderLocal,
