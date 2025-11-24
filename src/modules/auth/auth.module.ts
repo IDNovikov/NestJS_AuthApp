@@ -1,9 +1,8 @@
-import { forwardRef, Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HashService } from './hash.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { UserModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshJwtStrategy } from './refreshJwt.stratagy';
@@ -22,13 +21,13 @@ import { RegistrationFacade } from './registration/registration.facade';
 import { AdminFacade } from './admin/admin.facade';
 import { PasswordFacade } from './password/password.facade';
 import { SessionFacade } from './session/session.facade';
+import { UsersAdaptersModule } from '@/modules/core/adapters/users/user.adapters.module';
 
-@Global()
 @Module({
   imports: [
+    UsersAdaptersModule,
     ConfigModule,
     RedisModule,
-    forwardRef(() => UserModule),
     MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
@@ -54,7 +53,6 @@ import { SessionFacade } from './session/session.facade';
     SessionsService,
     JwtStrategy,
     RefreshJwtStrategy,
-    HashService,
     JwtModule,
     PassportModule,
     AuthFacade,
@@ -71,16 +69,6 @@ import { SessionFacade } from './session/session.facade';
         }),
       inject: [ConfigService],
     },
-  ],
-  exports: [
-    HashService,
-    JwtModule,
-    PassportModule,
-    AuthFacade,
-    AdminFacade,
-    RegistrationFacade,
-    PasswordFacade,
-    SessionFacade,
   ],
 })
 export class AuthModule {}

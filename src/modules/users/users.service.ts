@@ -4,17 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../core/prisma/prisma.service';
-import { HashService } from '../auth/hash.service';
 import { RedisService } from '../core/redis/redis.service';
 import { Prisma, User } from '@prisma/client';
 import { UserQueryDto } from './dto/user-query.dto';
 import { UserMapper } from './mappers/users.mapper';
+import { ICreateUserDto } from './dto/create-user.dto';
+import { IUpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
-    private hashService: HashService,
     private redis: RedisService,
   ) {}
 
@@ -76,7 +76,7 @@ export class UsersService {
   //TODO: переработь ДТОшку
   async updateUser(
     identifier: { id: number } | { email: string },
-    dto: Prisma.UserUpdateInput,
+    dto: IUpdateUserDto,
   ): Promise<User> {
     const updatedUser = await this.prisma.user.update({
       where: identifier,
@@ -88,7 +88,8 @@ export class UsersService {
     return updatedUser;
   }
 
-  async createUser({ email, password, userName }): Promise<User> {
+  async createUser(dto: ICreateUserDto): Promise<User> {
+    const { email, password, userName } = dto;
     const exist = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: email }, { userName: userName }],
@@ -105,7 +106,7 @@ export class UsersService {
       data: {
         userName: userName,
         email: email,
-        password: await this.hashService.hash(password),
+        password: password,
         role: 'USER',
       },
     });

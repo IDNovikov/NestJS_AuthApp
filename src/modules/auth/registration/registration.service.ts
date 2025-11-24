@@ -1,22 +1,32 @@
-import { ISessionData } from '@/modules/auth/shared/decorators/sessionData.decorator';
 import { get6NumberCode } from '@/modules/auth/shared/utils/getRandomCodes.util';
 import { RedisService } from '@/modules/core/redis/redis.service';
 import { MailService } from '@/modules/mail/mail.service';
-import { SafeUser } from '@/modules/users/types/user.types';
-import { UsersService } from '@/modules/users/users.service';
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { checkPassword } from '../shared/utils/checkPassword.util';
+import {
+  AuthUserReaderPort,
+  IAuthUserReaderPort,
+} from '@/modules/core/adapters/users/readers/authUser-reader.port';
+import {
+  AuthUserWriterPort,
+  IAuthUserWriterPort,
+} from '@/modules/core/adapters/users/writer/authUser-writer.port';
+import { AuthUserModel } from '@/modules/core/adapters/users/users.type';
 
 @Injectable()
 export class RegistrationService {
   constructor(
+    @Inject(AuthUserReaderPort)
+    private userReader: IAuthUserReaderPort,
+    @Inject(AuthUserWriterPort)
+    private userWriter: IAuthUserWriterPort,
     private mail: MailService,
-    private user: UsersService,
     private redis: RedisService,
   ) {}
 
@@ -36,18 +46,19 @@ export class RegistrationService {
     userName: string,
     email: string,
     password: string,
-  ): Promise<User> {
+  ): Promise<AuthUserModel> {
     const { isVaild, message } = checkPassword(password);
     if (!isVaild || message) throw new ConflictException(message);
-    const user = await this.user.createUser({ email, password, userName });
+    const user = await this.userWriter.createUser({
+      email,
+      password,
+      userName,
+    });
+    if (!user) throw new ForbiddenException('User not created');
     return user;
   }
 
-  async verifyEmail(
-    id: number,
-    email: string,
-    code: string,
-  ): Promise<SafeUser> {
+  async verifyEmail(id: number, email: string, code: string) {
     const validData = await this.redis.get<{
       code: string;
       codeExpired: Date;
@@ -64,13 +75,13 @@ export class RegistrationService {
       throw new ForbiddenException('Verification code has expired');
     }
     await this.redis.del(email);
-    return this.user.updateUser({ id }, { isEmailVerified: true });
+    return this.userWriter.updateUser(id, { isEmailVerified: true });
   }
 
-  async checkIsUserVerified(email: string): Promise<SafeUser> {
-    const user = await this.user.getUserByEmail(email);
-
-    if (user.isEmailVerified) {
+  async checkIsUserVerified(email: string) {
+    const user = await this.userReader.getUserByEmail(email);
+    if (!user) throw new NotFoundException('User not found');
+    if (user?.isEmailVerified) {
       throw new ForbiddenException('Email is already verifiyed');
     }
 

@@ -5,5 +5,6 @@ export class CreateUserDto {
   @ApiProperty() @IsEmail() email!: string;
   @ApiProperty({ minLength: 6 }) @IsNotEmpty() @MinLength(6) password!: string;
   @ApiProperty({ minLength: 3 }) @IsNotEmpty() @MinLength(3) userName!: string;
-  
 }
+
+export type ICreateUserDto = InstanceType<typeof CreateUserDto>;

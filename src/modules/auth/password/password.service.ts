@@ -2,6 +2,7 @@ import { getRandomPass } from '@/modules/auth/shared/utils/getRandomCodes.util';
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -14,14 +15,32 @@ import {
   getCooldownByLevel,
   timeHumanize,
 } from '../shared/utils/passCooldown.util';
+import {
+  AuthUserReaderPort,
+  IAuthUserReaderPort,
+} from '@/modules/core/adapters/users/readers/authUser-reader.port';
+import {
+  AuthUserWriterPort,
+  IAuthUserWriterPort,
+} from '@/modules/core/adapters/users/writer/authUser-writer.port';
 
 @Injectable()
 export class PasswordService {
   constructor(
+    @Inject(AuthUserReaderPort)
+    private userReader: IAuthUserReaderPort,
+    @Inject(AuthUserWriterPort)
+    private userWriter: IAuthUserWriterPort,
     private hash: HashService,
-    private users: UsersService,
+
     private redis: RedisService,
   ) {}
+
+  async getUserByEmail(email: string) {
+    const user = await this.userReader.getUserByEmail(email);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
 
   async updateUserPassword(userId: number, password: string): Promise<void> {
     const { isVaild, message } = checkPassword(password);
@@ -31,12 +50,9 @@ export class PasswordService {
     }
     const hashedPassword = await this.hash.hash(password);
 
-    await this.users.updateUser(
-      { id: userId },
-      {
-        password: hashedPassword,
-      },
-    );
+    await this.userWriter.updateUser(userId, {
+      password: hashedPassword,
+    });
   }
 
   async checkPasswords(
@@ -47,7 +63,7 @@ export class PasswordService {
     if (oldPassword === newPassword)
       throw new BadRequestException('Passwords must differ');
 
-    const user = await this.users.getUserById(id, true);
+    const user = await this.userReader.getUserById(id);
     if (!user) throw new NotFoundException('User not found');
     if (!user.password) {
       throw new BadRequestException('User has no password');

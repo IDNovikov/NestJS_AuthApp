@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { UserReaderPort } from '../types/user-reader.port';
+import { IUserReaderPort } from '../../core/adapters/users/readers/user-reader.port';
 import { UsersService } from '../users.service';
 import { UserMapper } from '../mappers/users.mapper';
 
 @Injectable()
-export class UserReaderLocal implements UserReaderPort {
+export class UserReaderLocal implements IUserReaderPort {
   constructor(private readonly userService: UsersService) {}
 
   async getUserByEmail(email: string) {

@@ -72,11 +72,11 @@ export class UsersController {
     const user = await this.usersService.deleteUser(id);
     return UserMapper.privateUser(user);
   }
-  @UseGuards(JwtAuthGuard)
-  @Post()
-  @UseSwagger(...UsersSwagger.CreateUser)
-  async createUser(@Body() dto: CreateUserDto) {
-    const user = await this.usersService.createUser(dto);
-    return UserMapper.privateUser(user);
-  }
+  // @UseGuards(JwtAuthGuard)
+  // @Post()
+  // @UseSwagger(...UsersSwagger.CreateUser)
+  // async createUser(@Body() dto: CreateUserDto) {
+  //   const user = await this.usersService.createUser(dto);
+  //   return UserMapper.privateUser(user);
+  // }
 }

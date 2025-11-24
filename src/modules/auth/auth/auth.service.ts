@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,17 +16,22 @@ import {
   UnionJWTpayload,
   RedisRefreshValue,
 } from '@/modules/auth/shared/types/auth.types';
-import { UsersService } from '@/modules/users/users.service';
+
 import { redisRefreshString } from '@/modules/auth/shared/utils/redisRefreshString.utol';
+import {
+  AuthUserReaderPort,
+  IAuthUserReaderPort,
+} from '@/modules/core/adapters/users/readers/authUser-reader.port';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(AuthUserReaderPort)
+    private readonly user: IAuthUserReaderPort,
     private hash: HashService,
     private redis: RedisService,
     private jwt: JwtService,
     private cfg: ConfigService,
-    private user: UsersService,
   ) {}
 
   async generateAndUpdateTokens(
@@ -81,7 +87,7 @@ export class AuthService {
     if (token) {
       throw new ForbiddenException('Delete cookies or refresh tokens');
     }
-    const user = await this.user.getUserByEmail(email, true);
+    const user = await this.user.getUserByEmail(email);
     if (!user || !user.email || !user.password || user.status !== 'ACTIVE')
       throw new UnauthorizedException('Invalid email');
     const valid = await this.hash.compare(password, user.password);

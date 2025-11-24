@@ -21,7 +21,7 @@ export class UserResolver {
 
   @Query(() => UserGqlEntity)
   user(@Args('id', { type: () => Int }) id: number) {
-    return this.userService.getUserById(id);
+    return this.userService.getUser({ id });
   }
   @Mutation(() => UserGqlEntity)
   createUser(@Args('input') input: CreateUserInput) {

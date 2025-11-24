@@ -11,6 +11,11 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { MailModule } from './modules/mail/mail.module';
 import { APP_GUARD } from '@nestjs/core';
+import { AuthUserReaderPort } from './modules/core/adapters/users/readers/authUser-reader.port';
+import { AuthUserReaderLocal } from './modules/users/adapters/authUser-reader.adapter';
+import { AuthUserWriterPort } from './modules/core/adapters/users/writer/authUser-writer.port';
+import { AuthUserWriterLocal } from './modules/users/adapters/authUser-writer.adapter';
+import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters.module';
 
 @Module({
   imports: [
@@ -24,8 +29,9 @@ import { APP_GUARD } from '@nestjs/core';
     RedisModule,
     CoreModule,
     UserModule,
-    AuthModule,
+    UsersAdaptersModule,
     MailModule,
+    AuthModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,
@@ -35,6 +41,14 @@ import { APP_GUARD } from '@nestjs/core';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: AuthUserReaderPort,
+      useExisting: AuthUserReaderLocal,
+    },
+    {
+      provide: AuthUserWriterPort,
+      useExisting: AuthUserWriterLocal,
+    },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
