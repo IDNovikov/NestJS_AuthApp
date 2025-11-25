@@ -6,12 +6,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptors } from './common/interceptors/loggining.intrceptor';
 import { GlobalHttpExceptionFilter } from './common/filters/http-exception.filter';
 import cookieParser from 'cookie-parser';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
-
   //SWAGGER CONFIG
   const config = new DocumentBuilder()
     .setTitle('Afishaved API')
@@ -43,9 +43,9 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // удаляет поля, которых нет в DTO
-      forbidNonWhitelisted: true, // бросает ошибку, если пришло «лишнее»
-      transform: true, // автоматически преобразует типы
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
   app.use(cookieParser());
@@ -53,7 +53,8 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalHttpExceptionFilter());
   const port = process.env.PORT ?? 3000;
 
-  app.enableCors({ origin: `http://localhost:${port}/`, credentials: true });
+  app.enableCors({ origin: '*', credentials: true });
+  console.log('WS adapter:', app.getHttpServer()?.constructor?.name);
   await app.listen(port);
   console.log(`🚀 Server is running on http://localhost:${port}/`);
   console.log(`REST:    http://localhost:${port}/api`);

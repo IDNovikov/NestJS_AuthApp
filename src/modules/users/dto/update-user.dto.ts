@@ -1,12 +1,14 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
-import { IsOptional } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { User } from '@prisma/client';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-  @ApiProperty() status?: 'ACTIVE' | 'BANNED' | 'DELETED';
-  @ApiProperty() role?: 'ADMIN' | 'USER';
+  @IsEnum(['ACTIVE', 'BANNED', 'DELETED']) @ApiProperty() status?:
+    | 'ACTIVE'
+    | 'BANNED'
+    | 'DELETED';
+  @IsEnum(['ADMIN', 'USER']) @ApiProperty() role?: 'ADMIN' | 'USER';
   @ApiPropertyOptional() @IsOptional() telegramId?: string;
   @ApiProperty() @IsOptional() refreshToken?: string | null;
   @ApiProperty() @IsOptional() isEmailVerified: boolean;

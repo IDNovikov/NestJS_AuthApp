@@ -23,10 +23,11 @@ export class UserResolver {
   user(@Args('id', { type: () => Int }) id: number) {
     return this.userService.getUser({ id });
   }
-  @Mutation(() => UserGqlEntity)
-  createUser(@Args('input') input: CreateUserInput) {
-    return this.userService.createUser(input);
-  }
+
+  // @Mutation(() => UserGqlEntity)
+  // createUser(@Args('input') input: CreateUserInput) {
+  //   return this.userService.createUser(input);
+  // }
   //     @Mutation(() => UserGql)
   //   updateUser(@Args('id', { type: () => Int }) id: number, @Args('input') input: UpdateUserDto) {
   //     return this.userService.update(id, input);

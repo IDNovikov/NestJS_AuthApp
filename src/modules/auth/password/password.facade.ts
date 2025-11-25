@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PasswordService } from './password.service';
-import { MailService } from '@/modules/mail/mail.service';
+import { MailService } from '@/modules/core/mail/mail.service';
 
 import { ChangePassDto } from './dto/changePass.dto';
 import {

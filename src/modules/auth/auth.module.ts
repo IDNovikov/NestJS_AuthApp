@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HashService } from './hash.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { MailModule } from '../mail/mail.module';
+import { MailModule } from '../core/mail/mail.module';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshJwtStrategy } from './refreshJwt.stratagy';
 import { RedisModule } from '../core/redis/redis.module';

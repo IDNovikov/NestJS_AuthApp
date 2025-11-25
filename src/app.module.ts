@@ -7,13 +7,13 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { RedisModule } from './modules/core/redis/redis.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-import { MailModule } from './modules/mail/mail.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthUserReaderPort } from './modules/core/adapters/users/readers/authUser-reader.port';
 import { AuthUserReaderLocal } from './modules/users/adapters/authUser-reader.adapter';
 import { AuthUserWriterPort } from './modules/core/adapters/users/writer/authUser-writer.port';
 import { AuthUserWriterLocal } from './modules/users/adapters/authUser-writer.adapter';
 import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters.module';
+import { DesksModule } from './modules/desks/desks.module';
 
 @Module({
   imports: [
@@ -26,9 +26,9 @@ import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters
     ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
     RedisModule,
     CoreModule,
+    DesksModule,
     UserModule,
     UsersAdaptersModule,
-    MailModule,
     AuthModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,

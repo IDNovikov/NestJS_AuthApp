@@ -29,8 +29,41 @@ model User {
     role userRoles @default(USER)
     status userStatus @default(ACTIVE)
     password String 
+    desks Desk []
     userImage String? 
+
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
 }
+
+
+model Desk {
+   id       Int       @id @default(autoincrement())
+  name     String
+  userId Int
+  stickers Sticker[]
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sticker {
+  id        Int      @id @default(autoincrement())
+  deskId   Int
+  text      String
+  x         Int
+  y         Int
+  color     String?  @default("#ffeb3b")
+  layer     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  desk Desk @relation(fields: [deskId], references: [id])
+
+  @@index([deskId])
+  @@unique([deskId, layer]) 
+}
+
 

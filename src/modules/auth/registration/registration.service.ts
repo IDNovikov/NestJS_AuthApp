@@ -1,6 +1,6 @@
 import { get6NumberCode } from '@/modules/auth/shared/utils/getRandomCodes.util';
 import { RedisService } from '@/modules/core/redis/redis.service';
-import { MailService } from '@/modules/mail/mail.service';
+import { MailService } from '@/modules/core/mail/mail.service';
 import {
   ConflictException,
   ForbiddenException,
@@ -18,6 +18,7 @@ import {
   IAuthUserWriterPort,
 } from '@/modules/core/adapters/users/writer/authUser-writer.port';
 import { AuthUserModel } from '@/modules/core/adapters/users/users.type';
+import { HashService } from '../hash.service';
 
 @Injectable()
 export class RegistrationService {
@@ -28,6 +29,7 @@ export class RegistrationService {
     private userWriter: IAuthUserWriterPort,
     private mail: MailService,
     private redis: RedisService,
+    private hash: HashService,
   ) {}
 
   async sendEmailCode(
@@ -49,9 +51,12 @@ export class RegistrationService {
   ): Promise<AuthUserModel> {
     const { isVaild, message } = checkPassword(password);
     if (!isVaild || message) throw new ConflictException(message);
+
+    const hashed = await this.hash.hash(password);
+
     const user = await this.userWriter.createUser({
       email,
-      password,
+      password: hashed,
       userName,
     });
     if (!user) throw new ForbiddenException('User not created');
