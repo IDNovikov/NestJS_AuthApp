@@ -26,3 +26,6 @@ docker run -d --name redis -p 6379:6379 redis:7-alpine
 docker start redis  
 docker stop redis  
 docker rm redis
+
+## Старт с nodemone
+npm run dev
