@@ -30,11 +30,45 @@ model User {
     status userStatus @default(ACTIVE)
     password String 
     desks Desk []
+    messages Message[] 
+    chats Chat [] @relation("UserChats")
     userImage String? 
 
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
 }
+
+
+model Chat {
+  id       Int       @id @default(autoincrement())
+  name     String
+  members User[] @relation("UserChats")
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id     String   @id @db.Uuid
+  chatId   Int
+  authorId Int
+  text      String
+  isEdited Boolean @default(false)
+
+  chat Chat @relation(fields: [chatId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+  @@index([chatId])
+  @@index([authorId])
+}
+
+
+
+
 
 
 model Desk {

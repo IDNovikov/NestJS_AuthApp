@@ -91,6 +91,7 @@ export class AuthService {
     if (!user || !user.email || !user.password || user.status !== 'ACTIVE')
       throw new UnauthorizedException('Invalid email');
     console.log(user.password);
+    
     console.log(password);
     const valid = await this.hash.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Wrong password');

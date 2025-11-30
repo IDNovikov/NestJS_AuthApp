@@ -54,7 +54,6 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
 
   app.enableCors({ origin: '*', credentials: true });
-  console.log('WS adapter:', app.getHttpServer()?.constructor?.name);
   await app.listen(port);
   console.log(`🚀 Server is running on http://localhost:${port}/`);
   console.log(`REST:    http://localhost:${port}/api`);
