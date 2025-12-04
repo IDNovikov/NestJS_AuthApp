@@ -1,6 +1,16 @@
+interface ChatMessageProps {
+  id: string;
+  chatId: number;
+  authorId: number;
+  text: string;
+  createdAt: Date;
+  updatedAt: Date;
+  isEdited: boolean;
+}
+
 export class ChatMessage {
   constructor(
-    private _uid: string,
+    private _id: string,
     private _chatId: number,
     private _authorId: number,
     private _text: string,
@@ -22,36 +32,18 @@ export class ChatMessage {
     );
   }
 
-  static restore(
-    uid: string,
-    chatId: number,
-    authorId: number,
-    text: string,
-    createdAt: Date,
-    updatedAt: Date,
-    isEdited: boolean,
-  ) {
+  static restore(props: ChatMessageProps) {
     return new ChatMessage(
-      uid,
-      chatId,
-      authorId,
-      text.trim(),
-      createdAt,
-      updatedAt,
-      isEdited,
+      props.id,
+      props.chatId,
+      props.authorId,
+      props.text.trim(),
+      props.createdAt,
+      props.updatedAt,
+      props.isEdited,
     );
   }
 
-  get text() {
-    return this._text;
-  }
-
-  get updatedAt() {
-    return this._updatedAt;
-  }
-  get isEdited(): boolean {
-    return this._isEdited;
-  }
   edit(newText: string) {
     const text = newText.trim();
     if (!text.length) throw new Error('No empty text');
@@ -62,9 +54,12 @@ export class ChatMessage {
     this._isEdited = true;
   }
 
+  isAuthor(userId: number): boolean {
+    return userId === this._authorId;
+  }
   get Message() {
     return {
-      uid: this._uid,
+      id: this._id,
       chatId: this._chatId,
       authorId: this._authorId,
       text: this._text,

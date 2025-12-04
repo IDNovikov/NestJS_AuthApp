@@ -1,4 +1,3 @@
-// src/modules/chat/infrastructure/ws/chat.gateway.ts
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -15,12 +14,13 @@ import { SendMessageDto } from '../../application/dto/send-message.dto';
 import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
 import { ChatDTO } from '../../application/dto/chat.dto';
+import { EditMessageDto } from '../../application/dto/edit-message.dto';
 
 @WebSocketGateway({
   namespace: 'chat',
   cors: {
     origin: '*', // в продакшене лучше указать домены фронтенда
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT'],
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -58,13 +58,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.logger.log(`Client connected: ${client.id}, userId: ${payload.sub}`);
 
-      const userChats = await this.facade.getMappedChatsByUserId(payload.sub);
-
+      const userChats = await this.facade.getUsersChats(payload.sub);
       if (userChats?.length) {
         userChats.forEach((chat: ChatDTO) => client.join(chat.id.toString()));
       }
-
-      return client.emit('chat.init', userChats);
+      return;
     } catch (err) {
       this.logger.error(`Connection error: ${err.message}`);
       client.disconnect();
@@ -82,32 +80,37 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message.send')
   async handleSend(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { chatId: string; text: string },
+    @MessageBody() body: SendMessageDto,
   ) {
     const userId = client.data.userId;
     if (!userId) throw new WsException('Unauthorized');
     try {
-      const dto: SendMessageDto = { chatId: body.chatId, text: body.text };
-      const messageView = await this.facade.sendMessage(userId, dto);
-
-      this.emitToChat(Number(body.chatId), 'message.new', messageView);
-
-      return messageView;
+      const view = await this.facade.sendMessage(userId, body);
+      return client.emit('message.send', view);
     } catch (err) {
       this.logger.error(`Failed to send message: ${err.message}`);
-      throw new WsException('Message sending failed');
+      throw new WsException(`Send ailed ${err.message}`);
+    }
+  }
+
+  @SubscribeMessage('message.edit')
+  async handleEdit(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: EditMessageDto,
+  ) {
+    const userId = client.data.userId;
+    if (!userId) throw new WsException('Unauthorized');
+
+    try {
+      const view = await this.facade.editMessage(userId, body);
+      return client.emit('message.edit', view);
+    } catch (err) {
+      this.logger.error(`Failed to send message: ${err.message}`);
+      throw new WsException(`Edit failed ${err.message}`);
     }
   }
 
   emitToChat(chatId: number, event: string, payload: unknown) {
     this.server.to(chatId.toString()).emit(event, payload);
   }
-
-  // emitToUser(userId: number, event: string, payload: unknown) {
-  //   this.server.sockets.sockets.forEach((socket) => {
-  //     if (socket.data.userId === userId) {
-  //       socket.emit(event, payload);
-  //     }
-  //   });
-  // }
 }

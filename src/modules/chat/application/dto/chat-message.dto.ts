@@ -1,5 +1,5 @@
 export type ChatMessageDTO = {
-  uid: string;
+  id: string;
   chatId: number;
   authorId: number;
   text: string;

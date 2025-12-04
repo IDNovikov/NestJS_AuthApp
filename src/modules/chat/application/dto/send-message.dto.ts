@@ -1,6 +1,4 @@
-// DTO, который прилетает с REST/WebSocket
 export class SendMessageDto {
-  chatId!: string;
+  chatId!: number;
   text!: string;
-  // authorId можно брать из JWT, а можно передавать — зависит от архитектуры
 }

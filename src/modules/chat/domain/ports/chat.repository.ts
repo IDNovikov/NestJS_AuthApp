@@ -1,21 +1,41 @@
 //port to prisma service
-
-import { ChatDTO } from '../../application/dto/chat.dto';
 import { ChatMessage } from '../entities/chat-message.entity';
 import { ChatRoom } from '../entities/chat-room.entity';
+import { ChatUser } from '../entities/chat-user.entity';
+import { Chat } from '../entities/chat.entity';
 
 export abstract class ChatRepository {
+  //Messages
+
   abstract getChatsByUserId(
     userId: number,
-    massgesLimit?: number,
-  ): Promise<ChatDTO[]>;
-
+    limit?: number,
+    cursor?: number,
+  ): Promise<ChatRoom[]>;
   abstract findRoomById(chatId: number): Promise<ChatRoom | null>;
+  abstract getUsersChats(
+    userId: number,
+    limit: number,
+    cursor: number,
+  ): Promise<ChatRoom[]>;
+  abstract editMembersInChat(
+    chatId: number,
+    users: ChatUser[],
+  ): Promise<ChatRoom>;
 
-  abstract saveMessage(message);
+  abstract createChatRoom(chat: ChatRoom): Promise<ChatRoom>;
+
+  abstract isPrivateChatExist(members: ChatUser[]): Promise<ChatRoom | null>;
+
+  //Messages
+
+  abstract createMessage(message: ChatMessage): Promise<ChatMessage | null>;
   abstract getMessageById(id: string): Promise<ChatMessage | null>;
-}
+  abstract editMessage(message: ChatMessage): Promise<ChatMessage | null>;
 
-// domain знает только абстракции:
-// где хранится — не важно (Postgres, Mongo, in-memory)
-// как рассылаются события — не важно (socket.io, Kafka и т.п.)
+  abstract getMessagesByChatId(
+    chatId: number,
+    limit: number,
+    cursor?: string,
+  ): Promise<{ messages: ChatMessage[]; nextCursor?: string }>;
+}

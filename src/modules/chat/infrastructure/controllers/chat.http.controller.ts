@@ -3,7 +3,7 @@ import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ChatFacade } from '../../application/chat.facade';
 import { SendMessageDto } from '../../application/dto/send-message.dto';
 import { EditMessageDto } from '../../application/dto/edit-message.dto';
-import { GetHistoryDto } from '../../application/dto/get-history.dto';
+import { GetHistoryDto } from '../../application/dto/get-messages.dto';
 
 //ЗАчем вообще контроллер нужен? Для админа?
 @Controller('chat')

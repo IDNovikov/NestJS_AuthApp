@@ -5,7 +5,7 @@ export class ChatMessageMapper {
   static toDTO(entity: ChatMessage): ChatMessageDTO {
     const raw = entity.Message;
     return {
-      uid: raw.uid,
+      id: raw.id,
       chatId: raw.chatId,
       authorId: raw.authorId,
       text: raw.text,

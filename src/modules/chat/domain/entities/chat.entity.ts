@@ -21,11 +21,11 @@ export class Chat {
 
   static restore(
     id: number,
-    name: string,
+    name: string | null,
     members: ChatUser[],
     messages: ChatMessage[],
   ): Chat {
-    return new Chat(id, name, members, messages);
+    return new Chat(id, name ?? null, members, messages);
   }
   get Chat() {
     return {
