@@ -14,6 +14,8 @@ import { AuthUserWriterPort } from './modules/core/adapters/users/writer/authUse
 import { AuthUserWriterLocal } from './modules/users/adapters/authUser-writer.adapter';
 import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters.module';
 import { DesksModule } from './modules/desks/desks.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { WSChat } from './modules/core/ws/ws.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { DesksModule } from './modules/desks/desks.module';
     CoreModule,
     DesksModule,
     UserModule,
+    WSChat,
+    ChatModule,
     UsersAdaptersModule,
     AuthModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({

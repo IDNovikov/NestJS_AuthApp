@@ -1,14 +1,14 @@
 import { ChatRepository } from '../ports/chat.repository';
-import { ChatEventsPort } from '../ports/chat-events.port';
 import { ChatMessage } from '../entities/chat-message.entity';
 import { MessageSentEvent } from '../events/message-sent.event';
 import { Injectable } from '@nestjs/common';
-import { Chat } from '../entities/chat.entity';
 import { SendMessageDto } from '../../application/dto/send-message.dto';
 import { EditMessageDto } from '../../application/dto/edit-message.dto';
 import { ChatRoom } from '../entities/chat-room.entity';
 import { ChatUser } from '../entities/chat-user.entity';
 import { ChatUserDTO } from '../../application/dto/chat-user.dto';
+import { ChatRoomDTO } from '../../application/dto/chat-room.dto';
+import { ChatEventsPort } from '@/modules/chat/domain/events/ports/ws.port';
 
 @Injectable()
 export class ChatDomainService {
@@ -21,58 +21,63 @@ export class ChatDomainService {
   async getChatsByUserId(
     userId: number,
     limit = 20,
-    cursor: number,
-  ): Promise<Chat[]> {
-    const chats = await this.chatRepo.getChatsByUserId(userId, limit);
+    cursor?: number,
+  ): Promise<ChatRoom[]> {
+    const chats = await this.chatRepo.getUsersChats(userId, limit, cursor);
     return chats.filter((chat) => chat.hasUser(userId));
   }
 
   async createChat(
     users: ChatUserDTO[],
-    title: string | null,
+    name: string | null,
   ): Promise<ChatRoom> {
+    if (users.length <= 1) {
+      throw new Error('No single users chats');
+    }
     const chatEntity = ChatRoom.createNew(
       users.map((m) => ChatUser.createNew(m.id, m.userName, m.userImage)),
-      title,
+      name,
     );
+
     if (chatEntity.members.length == 2) {
       const oldChat = await this.chatRepo.isPrivateChatExist(
-        chatEntity.members,
+        chatEntity.members[0].id,
+        chatEntity.members[1].id,
       );
+
       if (oldChat) throw new Error('Private chat is already exist');
     }
     const newChat = await this.chatRepo.createChatRoom(chatEntity);
     return newChat;
   }
 
-  async editeMembersInChat(
-    chatId: number,
-    users: ChatUserDTO[],
-  ): Promise<ChatRoom> {
-    const existingRoom = await this.isChatExist(chatId);
-    const isUserIn = users.find((u) => existingRoom.hasUser(u.id));
+  async updateChatData(updatedData: ChatRoomDTO): Promise<ChatRoom> {
+    const chat = await this.isChatExist(updatedData.id);
+    if (updatedData.name) {
+      chat.editName(updatedData.name);
+    }
+    const isUserIn = updatedData.members.find((u) => chat.hasUser(u.id));
     if (!isUserIn) throw new Error('No users in this chat');
-
-    const members = users.map((user) =>
-      ChatUser.createNew(user.id, user.userName, user.userImage),
-    );
-    const newChat = await this.chatRepo.editMembersInChat(chatId, members);
-    return newChat;
+    if (updatedData.name) {
+      chat.editName(updatedData.name);
+    }
+    if (updatedData.members) {
+      const newMembers = updatedData.members.map((m) =>
+        ChatUser.createNew(m.id, m.userName, m.userImage),
+      );
+      chat.updateMembers(newMembers);
+    }
+    const updatedChat = await this.chatRepo.updateChatRoom(chat);
+    return updatedChat;
   }
 
   async isChatExist(chatId: number): Promise<ChatRoom> {
-    const chatRoom = await this.chatRepo.findRoomById(chatId);
+    const chatRoom = await this.chatRepo.getChatById(chatId);
     if (!chatRoom) {
       throw new Error('Chat not found');
     }
     return chatRoom;
   }
-
-  isUserMember(userId: number, chat: ChatRoom): boolean {
-    return chat.hasUser(userId);
-  }
-
-  async isPrivateChatExist(members: ChatUser[]) {}
 
   //Messages
   async sendDomainMessage(
@@ -81,8 +86,7 @@ export class ChatDomainService {
   ): Promise<ChatMessage> {
     let chatRoom = await this.isChatExist(dto.chatId);
 
-    if (!this.isUserMember(userId, chatRoom))
-      throw new Error('User is not member');
+    if (!chatRoom.hasUser(userId)) throw new Error('User is not member');
 
     const message = ChatMessage.createNew(dto.chatId, userId, dto.text);
     const sendedMessage = await this.chatRepo.createMessage(message);
@@ -111,7 +115,7 @@ export class ChatDomainService {
   async getMessages(
     userId: number,
     chatId: number,
-    limit: number,
+    limit?: number,
     cursor?: string,
   ): Promise<{ messages: ChatMessage[]; nextCursor?: string }> {
     const chat = await this.isChatExist(chatId);

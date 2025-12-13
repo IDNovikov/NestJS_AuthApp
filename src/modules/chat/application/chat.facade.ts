@@ -7,15 +7,14 @@ import { ChatMessageDTO } from './dto/chat-message.dto';
 import { CreateChatDTO } from './dto/create-chat.dto';
 import { ChatRoomDTO } from './dto/chat-room.dto';
 import { ChatRoomMapper } from './mappers/chat-room.mapper';
-import { EditMembersDTO } from './dto/edit-members.dto';
 import { GetMessagesDto } from './dto/get-messages.dto';
 import { GetChatsDTO } from './dto/get-chats.dto';
 
 @Injectable()
 export class ChatFacade {
   constructor(private readonly domain: ChatDomainService) {}
-  //chatRooms
 
+  //chatRooms
   async getUsersChats(dto: GetChatsDTO) {
     return (
       await this.domain.getChatsByUserId(dto.userId, dto.limit, dto.cursor)
@@ -27,15 +26,11 @@ export class ChatFacade {
       await this.domain.createChat(dto.members, dto.name),
     );
   }
-
-  async editChatMembers(dto: EditMembersDTO): Promise<ChatRoomDTO> {
-    return ChatRoomMapper.toDTO(
-      await this.domain.editeMembersInChat(dto.chatId, dto.members),
-    );
+  async updateChat(dto: ChatRoomDTO): Promise<ChatRoomDTO> {
+    return ChatRoomMapper.toDTO(await this.domain.updateChatData(dto));
   }
 
   //messages
-
   async sendChatMessage(
     userId: number,
     dto: SendMessageDto,
@@ -44,7 +39,6 @@ export class ChatFacade {
       await this.domain.sendDomainMessage(userId, dto),
     );
   }
-
   async editChatMessage(
     userId: number,
     dto: EditMessageDto,
@@ -53,7 +47,6 @@ export class ChatFacade {
       await this.domain.editDomainMessage(userId, dto),
     );
   }
-
   async getChatMessages(
     dto: GetMessagesDto,
   ): Promise<{ messages: ChatMessageDTO[]; nextCursor?: string }> {

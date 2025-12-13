@@ -16,11 +16,16 @@ export class ChatUser {
   static restore(id: number, userName: string, userImage?: string | null) {
     return new ChatUser(id, userName, userImage ?? null);
   }
-  get ChatUser() {
-    return {
-      id: this._id,
-      userName: this._userName,
-      userImage: this._userImage,
-    };
+
+  get id() {
+    return this._id;
+  }
+
+  get userName() {
+    return this._userName;
+  }
+
+  get userImage() {
+    return this._userImage;
   }
 }
