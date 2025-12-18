@@ -8,7 +8,8 @@ import { ChatRoom } from '../entities/chat-room.entity';
 import { ChatUser } from '../entities/chat-user.entity';
 import { ChatUserDTO } from '../../application/dto/chat-user.dto';
 import { ChatRoomDTO } from '../../application/dto/chat-room.dto';
-import { ChatEventsPort } from '@/modules/chat/domain/events/ports/ws.port';
+import { MessageEditedEvent } from '../events/message-edited.event';
+import { ChatEventsPort } from '../events/ws.port';
 
 @Injectable()
 export class ChatDomainService {
@@ -91,8 +92,9 @@ export class ChatDomainService {
     const message = ChatMessage.createNew(dto.chatId, userId, dto.text);
     const sendedMessage = await this.chatRepo.createMessage(message);
     if (!sendedMessage) throw new Error('Message is not saved');
-
+    console.log(sendedMessage);
     const event = new MessageSentEvent(message);
+    console.log(event);
     await this.events.publishMessageSent(event);
     return sendedMessage;
   }
@@ -107,7 +109,7 @@ export class ChatDomainService {
     message.edit(dto.newText);
     const editedMessage = await this.chatRepo.editMessage(message);
     if (!editedMessage) throw new Error('Message not saved');
-    const event = new MessageSentEvent(editedMessage);
+    const event = new MessageEditedEvent(editedMessage);
     await this.events.publishMessageEdited(event);
     return editedMessage;
   }

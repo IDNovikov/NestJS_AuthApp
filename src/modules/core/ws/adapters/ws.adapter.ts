@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { WSChatGateway } from '../ws.gateway';
 import { MessageEditedEvent } from '@/modules/chat/domain/events/message-edited.event';
 import { ChatMessageMapper } from '@/modules/chat/application/mappers/chat-message.mapper';
-import { ChatEventsPort } from '../../../chat/domain/events/ports/ws.port';
+import { ChatEventsPort } from '@/modules/chat/domain/events/ws.port';
 
 @Injectable()
 export class ChatWsEventsAdapter implements ChatEventsPort {
@@ -11,12 +11,13 @@ export class ChatWsEventsAdapter implements ChatEventsPort {
 
   async publishMessageSent(event: MessageSentEvent): Promise<void> {
     const view = ChatMessageMapper.toDTO(event.message);
+    console.log(event);
     this.gateway.emitToChat(event.message.Message.chatId, 'message.new', view);
   }
 
   async publishMessageEdited(event: MessageEditedEvent): Promise<void> {
     const view = ChatMessageMapper.toDTO(event.message);
-
+    console.log(event);
     this.gateway.emitToChat(
       event.message.Message.chatId,
       'message.edited',

@@ -1,20 +1,23 @@
 import { ISessionData } from '@/modules/auth/shared/decorators/sessionData.decorator';
 import { RedisRefreshValue } from '@/modules/auth/shared/types/auth.types';
-
 import { redisRefreshString } from '@/modules/auth/shared/utils/redisRefreshString.utol';
 import { RedisService } from '@/modules/core/redis/redis.service';
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { RawRedisToken, StrictRedisToken } from '../shared/types/session.types';
+import { ConfigService } from '@nestjs/config';
+import { parseTTL } from '../shared/utils/parseTTL';
 
 type parsedData = { userId?: string; deviceId: string; session: ISessionData };
 
 @Injectable()
 export class SessionsService {
+  private _access_token_expires;
   constructor(
-    private jwt: JwtService,
     private redis: RedisService,
-  ) {}
+    private cfg: ConfigService,
+  ) {
+    this._access_token_expires = this.cfg.get('JWT_EXPIRES');
+  }
 
   private toStrict(tokens: RawRedisToken[]): StrictRedisToken[] {
     return tokens.filter((t): t is StrictRedisToken => t.value !== null);
@@ -27,7 +30,11 @@ export class SessionsService {
   ): Promise<void> {
     const deleted = await this.redis.del(redisRefreshString(userId, deviceId));
     if (!deleted) throw new ForbiddenException('Token is not deleted');
-    await this.redis.set(`blacklist:${jti}`, 1, 100500);
+    await this.redis.set(
+      `blacklist:${jti}`,
+      1,
+      parseTTL(this._access_token_expires),
+    );
   }
 
   parseSessionsData(

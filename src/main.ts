@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@/app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptors } from './common/interceptors/loggining.intrceptor';
 import { GlobalHttpExceptionFilter } from './common/filters/http-exception.filter';
 import cookieParser from 'cookie-parser';
@@ -46,6 +46,10 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => {
+        console.log(JSON.stringify(errors, null, 2));
+        return new BadRequestException(errors);
+      },
     }),
   );
   app.use(cookieParser());

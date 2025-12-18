@@ -8,7 +8,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { HashService } from '../hash.service';
-import { UsersService } from '@/modules/users/users.service';
 import { checkPassword } from '../shared/utils/checkPassword.util';
 import { RedisService } from '@/modules/core/redis/redis.service';
 import {

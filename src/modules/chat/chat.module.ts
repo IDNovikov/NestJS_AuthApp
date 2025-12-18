@@ -5,9 +5,12 @@ import { ChatDomainService } from './domain/services/chat.domain-service';
 import { ChatFacade } from './application/chat.facade';
 import { ChatRepository } from './domain/ports/chat.repository';
 import { ChatPrismaRepository } from './infrastructure/persistance/chat.prisma.repository';
-import { ChatEventsPort } from './domain/events/ports/ws.port';
+
+import { ChatController } from './infrastructure/controllers/chat.http.controller';
+import { ChatEventsPort } from './domain/events/ws.port';
 
 @Module({
+  controllers: [ChatController],
   providers: [
     PrismaService,
     ChatDomainService,

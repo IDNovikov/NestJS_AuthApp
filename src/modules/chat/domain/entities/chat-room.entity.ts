@@ -101,4 +101,26 @@ export class ChatRoom {
       }
     }
   }
+
+  newUpdate(newMembers: ChatUser[]): void {
+    //TODO: Вернуться к этому и изменить логику обновления членов чата
+    const oldIds = new Set(this._members.map((m) => m.id));
+    const newIds = new Set(newMembers.map((m) => m.id));
+
+    for (const oldMember of this._members) {
+      if (!newIds.has(oldMember.id)) {
+        this.removeUser(oldMember.id);
+      }
+    }
+
+    if (!this.isGroup) {
+      throw new Error('Private chat must have exactly two members');
+    }
+
+    for (const m of newMembers) {
+      if (!oldIds.has(m.id)) {
+        this.addUser(m);
+      }
+    }
+  }
 }

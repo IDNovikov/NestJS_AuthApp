@@ -29,21 +29,45 @@ model User {
     role userRoles @default(USER)
     status userStatus @default(ACTIVE)
     password String 
-    desks Desk []
     messages Message[] 
-    chats Chat [] @relation("UserChats")
+    chats Chat [] @relation("UserChats")//Убираем
+    // chatMembers ChatMember[] // Добавляем
     userImage String? 
-
     createdAt  DateTime @default(now())
     updatedAt  DateTime @updatedAt
 }
 
+
+// model ChatMember { //Добавляем
+//   chatId Int
+//   userId Int
+
+//   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   isActive Boolean @default(true)
+//   joinedAt DateTime @default(now())
+//   leftAt   DateTime?
+
+//   @@id([chatId, userId])
+//   @@index([userId, isActive])
+// }
+
+// enum ChatType { //Добавляем
+//   PRIVATE
+//   GROUP
+// }
+
+
+
 model Chat {
   id       Int       @id @default(autoincrement())
+   //type ChatType //добавляем
   name     String?
-  members User[] @relation("UserChats")
+  members User[] @relation("UserChats")//убираем
+   // members ChatMember[] //добавляем
   messages Message[]
-
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -54,7 +78,8 @@ model Message {
   authorId Int
   text      String
   isEdited Boolean @default(false)
-
+  //isReaded Boolean @default(false)
+  //isDeleted Boolean @default(false)
   chat Chat @relation(fields: [chatId], references: [id])
   author User @relation(fields: [authorId], references: [id])
   createdAt DateTime @default(now())
@@ -64,31 +89,3 @@ model Message {
   @@index([authorId])
 }
 
-model Desk {
-   id       Int       @id @default(autoincrement())
-  name     String
-  userId Int
-  stickers Sticker[]
-  user User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Sticker {
-  id        Int      @id @default(autoincrement())
-  deskId   Int
-  text      String
-  x         Int
-  y         Int
-  color     String?  @default("#ffeb3b")
-  layer     Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  desk Desk @relation(fields: [deskId], references: [id])
-
-  @@index([deskId])
-  @@unique([deskId, layer]) 
-}

@@ -13,7 +13,6 @@ import { AuthUserReaderLocal } from './modules/users/adapters/authUser-reader.ad
 import { AuthUserWriterPort } from './modules/core/adapters/users/writer/authUser-writer.port';
 import { AuthUserWriterLocal } from './modules/users/adapters/authUser-writer.adapter';
 import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters.module';
-import { DesksModule } from './modules/desks/desks.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { WSChat } from './modules/core/ws/ws.module';
 
@@ -28,7 +27,6 @@ import { WSChat } from './modules/core/ws/ws.module';
     ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
     RedisModule,
     CoreModule,
-    DesksModule,
     UserModule,
     WSChat,
     ChatModule,

@@ -43,7 +43,14 @@ export class WSChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       if (!token) return this.reject(client, 'Unauthorized');
 
-      let payload;
+      let payload: {
+        sub: number;
+        email: string;
+        role: string;
+        jti: string;
+        iat: number;
+        exp: number;
+      };
       try {
         payload = this.jwt.verify(token);
       } catch (error) {
@@ -53,7 +60,10 @@ export class WSChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.data.userId = payload.sub;
       this.logger.log(`Client connected: ${client.id}, userId: ${payload.sub}`);
 
-      const userChats = await this.facade.getUsersChats(payload.sub);
+      const userChats = await this.facade.getUsersChats({
+        userId: payload.sub,
+      });
+
       if (!userChats) throw new WsException('No chats');
       if (userChats?.length) {
         userChats.forEach((chat: ChatDTO) => client.join(chat.id.toString()));
@@ -82,6 +92,7 @@ export class WSChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!body.chatId) throw new WsException('ChatId required');
     try {
       const view = await this.facade.sendChatMessage(userId, body);
+      this.server.to(body.chatId.toString()).emit('message.new', view);
       return client.emit('message.send', view);
     } catch (err) {
       this.logger.error(`Failed to send message: ${err.message}`);
@@ -97,10 +108,11 @@ export class WSChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = client.data.userId;
 
     if (!userId) throw new WsException('Unauthorized');
-
+    if (!body.messageId) throw new WsException('Message id required');
     try {
       const view = await this.facade.editChatMessage(userId, body);
       if (!view) throw new WsException('No chats');
+      this.server.to(view.chatId.toString()).emit('message.edited', view);
       return client.emit('message.edit', view);
     } catch (err) {
       this.logger.error(`Failed to send message: ${err.message}`);
