@@ -9,6 +9,7 @@ export class UserQueryDto {
   @IsInt()
   @Min(1)
   page?: number;
+
   @ApiPropertyOptional({ default: 20 })
   @IsOptional()
   @Type(() => Number)
@@ -16,6 +17,7 @@ export class UserQueryDto {
   @Min(1)
   @Max(100)
   limit?: number;
+
   @ApiPropertyOptional({
     enum: ['createdAt', 'email', 'userName'],
     default: 'createdAt',
