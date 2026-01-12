@@ -1,0 +1,6 @@
+node_modules
+npm.error.log
+dist
+.git
+Dockerfile
+docker-compose.yml

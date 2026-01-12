@@ -25,3 +25,7 @@ NestJS, Prisma, Redis, ApolloServer, GraphQL, Swagger, rate-limit
    docker start redis
    docker stop redis
    docker rm redis
+
+--TODO
+
+1. ПРоблема: можно спамить новыми верификационными паролями

@@ -20,8 +20,8 @@ import { Roles } from '@/modules/auth/shared/decorators/roles.decorator';
 import { GetChatsQueryDto } from '../dto/get-ChatsQuery.dto';
 import { CreateChatDTO } from '../dto/create-Chat.dto';
 import { GetMessagesQueryDto } from '../dto/get-MessagesQuery.dto';
-import { CreateMessageDTO } from '../dto/create-message.dto';
 import { EditMessageDTOO } from '../dto/edit-Message.dto';
+import { CreateMessageDTO } from '../dto/create-Message.dto';
 
 @ApiTags('chats')
 @Controller('chats')
