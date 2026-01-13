@@ -8,7 +8,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UnVerifiedUsersCleanUpCron } from './cron/unVerifiedUsersCleanUp.job';
 import { AuthUserReaderLocal } from './adapters/authUser-reader.adapter';
 import { AuthUserWriterLocal } from './adapters/authUser-writer.adapter';
-import { CommandBus, CqrsModule, EventBus, QueryBus } from '@nestjs/cqrs';
+import { CqrsModule } from '@nestjs/cqrs';
 import { USER_COMMAND_HANDLERS } from './application/commands';
 import { USER_QUERY_HANDLERS } from './application/queries';
 import { USER_EVENT_HANDLERS } from './application/events';
@@ -18,6 +18,7 @@ import { UserFacade } from './application/user.facade';
   imports: [RedisModule, ScheduleModule.forRoot(), CqrsModule],
   controllers: [UsersController],
   providers: [
+    UserFacade,
     ...USER_COMMAND_HANDLERS,
     ...USER_QUERY_HANDLERS,
     ...USER_EVENT_HANDLERS,
@@ -32,15 +33,16 @@ import { UserFacade } from './application/user.facade';
   ],
   exports: [UserFacade, UsersService, AuthUserReaderLocal, AuthUserWriterLocal],
 })
-export class UserModule implements OnModuleInit {
-  constructor(
-    private readonly CommandBus: CommandBus,
-    private readonly QueryBus: QueryBus,
-    private readonly EventBus: EventBus,
-  ) {}
-  onModuleInit() {
-    this.CommandBus.register(USER_COMMAND_HANDLERS);
-    this.QueryBus.register(USER_QUERY_HANDLERS);
-    this.EventBus.register(USER_EVENT_HANDLERS);
-  }
-}
+// export class UserModule implements OnModuleInit {
+//   constructor(
+//     private readonly CommandBus: CommandBus,
+//     private readonly QueryBus: QueryBus,
+//     private readonly EventBus: EventBus,
+//   ) {}
+//   onModuleInit() {
+//     this.CommandBus.register(USER_COMMAND_HANDLERS);
+//     this.QueryBus.register(USER_QUERY_HANDLERS);
+//     this.EventBus.register(USER_EVENT_HANDLERS);
+//   }
+// }
+export class UserModule {}
