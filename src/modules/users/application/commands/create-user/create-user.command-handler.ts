@@ -9,8 +9,8 @@ export class CreateUserCommandHandler
   implements ICommandHandler<CreateUserCommand, UserAggregate>
 {
   constructor(private readonly userRepository: UserRepository) {}
-  async execute({ user }: CreateUserCommand): Promise<UserAggregate> {
-    const userAggregate = UserAggregate.create(user);
+  async execute({ dto }: CreateUserCommand): Promise<UserAggregate> {
+    const userAggregate = UserAggregate.create(dto);
 
     const existingUser = await this.userRepository.findFirstByEmailOrName(
       userAggregate.userName,

@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class UserQueryDto {
   @ApiPropertyOptional({ default: 1 })
@@ -8,6 +15,7 @@ export class UserQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @IsPositive()
   page?: number;
 
   @ApiPropertyOptional({ default: 20 })
@@ -16,6 +24,7 @@ export class UserQueryDto {
   @IsInt()
   @Min(1)
   @Max(100)
+  @IsPositive()
   limit?: number;
 
   @ApiPropertyOptional({

@@ -1,5 +1,6 @@
 import { UserAggregate } from '../domain/user.aggregate';
 import { IUser } from '../domain/user.interface';
+import { UserQueryDto } from '../dto/user-query.dto';
 
 export abstract class UserRepository {
   abstract create(user: IUser): Promise<UserAggregate>;
@@ -11,6 +12,8 @@ export abstract class UserRepository {
     userName: string,
     email: string,
   ): Promise<UserAggregate>;
-  abstract findAll(): Promise<UserAggregate[]>;
+  abstract findAll(
+    dto: UserQueryDto,
+  ): Promise<[UserAggregate[], total: number]>;
   abstract delete(id: string): Promise<UserAggregate>;
 }

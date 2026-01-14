@@ -1,0 +1,43 @@
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { GetUsersQuery } from './get-users.query';
+import { UserAggregate } from '@/modules/users/domain/user.aggregate';
+import { UserRepository } from '@/modules/users/repository/user.repository';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+
+@QueryHandler(GetUsersQuery)
+export class GetUsersQueryHandler
+  implements
+    IQueryHandler<
+      GetUsersQuery,
+      {
+        data: UserAggregate[];
+        total: number;
+      }
+    >
+{
+  private readonly logger = new Logger(GetUsersQueryHandler.name);
+  constructor(private readonly UserRepository: UserRepository) {}
+  async execute({ dto }: GetUsersQuery): Promise<{
+    data: UserAggregate[];
+    total: number;
+  }> {
+    const [items, total] = await this.UserRepository.findAll(dto).catch(
+      (err) => {
+        this.logger.error(err);
+        throw new HttpException(
+          'Error with repostitory',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      },
+    );
+    if (!!items.length) {
+      throw new BadRequestException(`No one users is not found`);
+    }
+    return { data: items, total };
+  }
+}
