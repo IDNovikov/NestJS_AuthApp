@@ -27,7 +27,7 @@ export class GetUsersQueryHandler
     data: UserAggregate[];
     total: number;
   }> {
-    const [items, total] = await this.UserRepository.findAll(dto).catch(
+    const { data, total } = await this.UserRepository.findAll(dto).catch(
       (err) => {
         this.logger.error(err);
         throw new HttpException(
@@ -36,9 +36,9 @@ export class GetUsersQueryHandler
         );
       },
     );
-    if (!!items.length) {
+    if (!!data.length) {
       throw new BadRequestException(`No one users is not found`);
     }
-    return { data: items, total };
+    return { data, total };
   }
 }

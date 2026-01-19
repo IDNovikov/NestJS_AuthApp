@@ -1,5 +1,7 @@
 //TODO: Меняем сущность в бд id = string
 
+import { $Enums, User } from '@prisma/client';
+
 export enum UserRoles {
   'ADMIN',
   'USER',
@@ -10,16 +12,16 @@ export enum UserStatus {
   'DELETED',
 }
 
-export interface IUser {
-  id: string;
+export interface IUser extends User {
+  id: number;
   userName: string;
   email: string;
   isEmailVerified: boolean;
   telegramId: string | null;
-  role: UserRoles;
-  status: UserStatus;
+  role: $Enums.userRoles;
+  status: $Enums.userStatus;
   password: string;
   userImage: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

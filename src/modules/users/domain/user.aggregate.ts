@@ -1,19 +1,20 @@
-import { IUser, UserRoles, UserStatus } from './user.interface';
+import { IUser } from './user.interface';
 import { UserServices } from './services';
 import {
   IsBoolean,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   validateSync,
 } from 'class-validator';
 import { Exclude } from 'class-transformer';
 import { DomainError } from '@/common/errors/domain.error';
+import { $Enums } from '@prisma/client';
 
 export class UserAggregate extends UserServices implements IUser {
-  @IsUUID()
-  id = crypto.randomUUID();
+  @IsNumber()
+  id;
   @IsString()
   userName: string;
   @IsString()
@@ -26,11 +27,11 @@ export class UserAggregate extends UserServices implements IUser {
   @IsOptional()
   telegramId: string | null = null;
 
-  @IsEnum(UserRoles)
-  role: UserRoles = UserRoles.ADMIN;
+  @IsEnum($Enums.userRoles)
+  role: $Enums.userRoles = $Enums.userRoles.ADMIN;
 
-  @IsEnum(UserStatus)
-  status: UserStatus = UserStatus.ACTIVE;
+  @IsEnum($Enums.userStatus)
+  status: $Enums.userStatus = $Enums.userStatus.ACTIVE;
 
   @IsString()
   @Exclude()
@@ -40,9 +41,11 @@ export class UserAggregate extends UserServices implements IUser {
   @IsOptional()
   userImage: string | null;
   @IsString()
-  createdAt = new Date().toISOString();
+  createdAt = new Date();
+  //.toISOString();
   @IsString()
-  updatedAt = new Date().toISOString();
+  updatedAt = new Date();
+  //.toISOString();
 
   private constructor() {
     super();
@@ -51,7 +54,10 @@ export class UserAggregate extends UserServices implements IUser {
   static create(user: Partial<IUser>) {
     const _user = new UserAggregate();
     Object.assign(_user, user);
-    _user.updatedAt = user?.id ? new Date().toISOString() : _user.updatedAt;
+    _user.updatedAt = user?.id
+      ? new Date()
+      : //.toISOString()
+        _user.updatedAt;
     const errors = validateSync(_user, { whitelist: true });
     if (!!errors.length) throw new DomainError(errors, 'User not valid');
     return _user;
