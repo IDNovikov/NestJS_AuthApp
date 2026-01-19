@@ -8,21 +8,25 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { UnVerifiedUsersCleanUpCron } from './cron/unVerifiedUsersCleanUp.job';
 import { AuthUserReaderLocal } from './adapters/authUser-reader.adapter';
 import { AuthUserWriterLocal } from './adapters/authUser-writer.adapter';
-import { CqrsModule } from '@nestjs/cqrs';
+import { CommandBus, CqrsModule, EventBus, QueryBus } from '@nestjs/cqrs';
 import { USER_COMMAND_HANDLERS } from './application/commands';
 import { USER_QUERY_HANDLERS } from './application/queries';
 import { USER_EVENT_HANDLERS } from './application/events';
 import { UserFacade } from './application/user.facade';
+import { userFacadeFactory } from './providers/user-facade.factory';
 
 @Module({
   imports: [RedisModule, ScheduleModule.forRoot(), CqrsModule],
   controllers: [UsersController],
   providers: [
-    UserFacade,
     ...USER_COMMAND_HANDLERS,
     ...USER_QUERY_HANDLERS,
     ...USER_EVENT_HANDLERS,
-
+    {
+      provide: UserFacade,
+      inject: [CommandBus, QueryBus, EventBus],
+      useFactory: userFacadeFactory,
+    },
     //OLD
     UsersService,
     PrismaService,

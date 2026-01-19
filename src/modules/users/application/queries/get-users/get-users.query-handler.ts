@@ -1,13 +1,14 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { GetUsersQuery } from './get-users.query';
 import { UserAggregate } from '@/modules/users/domain/user.aggregate';
-import { UserRepository } from '@/modules/users/repository/user.repository';
+
 import {
   BadRequestException,
   HttpException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { UserRepository } from '@/modules/users/providers/user.repository';
 
 @QueryHandler(GetUsersQuery)
 export class GetUsersQueryHandler
