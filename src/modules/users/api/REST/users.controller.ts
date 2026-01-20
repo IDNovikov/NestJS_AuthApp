@@ -36,16 +36,16 @@ export class UsersController {
   @Get('me')
   @UseSwagger(...UsersSwagger.getMe)
   async getMe(@User() userId: { sub: number }) {
-    const user = await this.usersService.getUser({ id: userId.sub });
-    return UserMapper.privateUser(user);
+    return UserMapper.privateUser(
+      await this.usersService.getUser({ id: userId.sub }),
+    );
   }
 
   //@UseGuards(JwtAuthGuard)
   @Get(':id')
   @UseSwagger(...UsersSwagger.GetUserById)
   async getUserById(@Param('id') id: number) {
-    const user = await this.userFacade.queries.getUser(id);
-    return UserMapper.safeUser(user);
+    return UserMapper.safeUser(await this.userFacade.queries.getUser(id));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -65,8 +65,9 @@ export class UsersController {
   @Put()
   @UseSwagger(...UsersSwagger.UpdateUser)
   async update(@User() userId: { sub: number }, @Body() body: UpdateUserDto) {
-    const user = await this.usersService.updateUser({ id: userId.sub }, body);
-    return UserMapper.privateUser(user);
+    return UserMapper.privateUser(
+      await this.usersService.updateUser({ id: userId.sub }, body),
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -74,8 +75,7 @@ export class UsersController {
   @Delete(':id')
   @UseSwagger(...UsersSwagger.DeleteUser)
   async deleteUser(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.deleteUser(id);
-    return UserMapper.privateUser(user);
+    return UserMapper.privateUser(await this.usersService.deleteUser(id));
   }
   // @UseGuards(JwtAuthGuard)
   // @Post()

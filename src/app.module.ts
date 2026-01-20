@@ -36,6 +36,8 @@ import { WSChat } from './modules/core/ws/ws.module';
       driver: ApolloDriver,
       autoSchemaFile: true,
       playground: true,
+      sortSchema: true,
+      context: ({ req, res }) => (req, res),
     }),
   ],
   providers: [
