@@ -1,8 +1,10 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { CreateUserCommand } from './create-user.command';
 import { UserAggregate } from '@/modules/users/domain/user.aggregate';
-import { UserRepository } from '@/modules/users/repository/user.repository';
+
 import { DomainError } from '@/common/errors/domain.error';
+import { UserRepository } from '@/modules/users/providers/user.repository';
+import { ConflictException } from '@nestjs/common';
 
 @CommandHandler(CreateUserCommand)
 export class CreateUserCommandHandler
@@ -12,11 +14,16 @@ export class CreateUserCommandHandler
   async execute({ dto }: CreateUserCommand): Promise<UserAggregate> {
     const userAggregate = UserAggregate.create(dto);
 
-    const existingUser = await this.userRepository.findFirstByEmailOrName(
-      userAggregate.userName,
-      userAggregate.email,
-    );
-
+    const existingUser = await this.userRepository.findUser({
+      email: userAggregate.email,
+    });
+    if (existingUser?.email === userAggregate.email) {
+      throw new ConflictException(`Email already registered`);
+    } else if (existingUser?.userName === userAggregate.userName) {
+      throw new ConflictException(
+        `User name ${existingUser.userName} already exist`,
+      );
+    }
     const createdUser = await this.userRepository
       .create(userAggregate)
       .catch((err) => {
@@ -25,25 +32,3 @@ export class CreateUserCommandHandler
     return createdUser;
   }
 }
-
-// async createUser(dto: ICreateUserDto): Promise<User> {
-//     const { email, password, userName } = dto;
-//
-//     if (exist?.email === email) {
-//       throw new ConflictException({ message: 'Email already registered' });
-//     } else if (exist?.userName === userName) {
-//       throw new ConflictException({ message: 'UserName already registered' });
-//     }
-
-//     const user = await this.prisma.user.create({
-//       data: {
-//         userName: userName,
-//         email: email,
-//         password: password,
-//         role: 'USER',
-//       },
-//     });
-
-//     await this.redis.set(`user:${user.id}`, UserMapper.safeUser(user));
-//     return user;
-//   }

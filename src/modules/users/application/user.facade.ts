@@ -8,6 +8,7 @@ import { UserQueryDto } from '../dto/user-query.dto';
 import { GetUsersQuery } from './queries/get-users/get-users.query';
 import { GetUserQueryHandler } from './queries/get-user/get-user.query-handler';
 import { GetUsersQueryHandler } from './queries/get-users/get-users.query-handler';
+import { UserAggregate } from '../domain/user.aggregate';
 
 @Injectable()
 export class UserFacade {
@@ -21,8 +22,8 @@ export class UserFacade {
     createUser: (user: CreateUserDTO) => this.createUser(user),
   };
   queries = {
-    getUser:(id:string)=> this.getUser(id),
-    getUsers(dto:UserQueryDto)=> this.getUsers(dto)
+    getUser: (id: number) => this.getUser(id),
+    getUsers: (dto: UserQueryDto) => this.getUsers(dto),
   };
   events = {};
 
@@ -36,8 +37,8 @@ export class UserFacade {
   //update
   //delete
 
-  private getUser(id: string) {
-    return this.QueryBus.execute<GetUserQuery, GetUserQueryHandler['execute']>(
+  private getUser(id: number) {
+    return this.QueryBus.execute<GetUserQuery, UserAggregate>(
       new GetUserQuery(id),
     );
   }

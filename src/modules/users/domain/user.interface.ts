@@ -2,16 +2,6 @@
 
 import { $Enums, User } from '@prisma/client';
 
-export enum UserRoles {
-  'ADMIN',
-  'USER',
-}
-export enum UserStatus {
-  'ACTIVE',
-  'BANNED',
-  'DELETED',
-}
-
 export interface IUser extends User {
   id: number;
   userName: string;

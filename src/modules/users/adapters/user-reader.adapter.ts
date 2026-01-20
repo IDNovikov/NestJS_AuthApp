@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IUserReaderPort } from '../../core/adapters/users/readers/user-reader.port';
 import { UsersService } from '../users.service';
-import { UserMapper } from '../mappers/users.mapper';
+import { UserMapper } from '../api/REST/mappers/users.mapper';
 
 @Injectable()
 export class UserReaderLocal implements IUserReaderPort {

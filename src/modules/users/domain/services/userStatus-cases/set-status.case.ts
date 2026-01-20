@@ -10,5 +10,6 @@ export const SET_USER_STATUS = async function (
   status: userStatus,
 ) {
   this.status = status;
-  this.updatedAt = new Date().toISOString();
+  this.updatedAt = new Date();
+  //.toISOString();
 };

@@ -10,23 +10,27 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UsersService } from '../../users.service';
 import { ApiTags } from '@nestjs/swagger';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserQueryDto } from './dto/user-query.dto';
-import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from '../../dto/update-user.dto';
+import { UserQueryDto } from '../../dto/user-query.dto';
+import { CreateUserDto } from '../../dto/create-user.dto';
 import { Roles } from '@/modules/auth/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/modules/auth/shared/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
 import { UserMapper } from './mappers/users.mapper';
 import { UseSwagger } from '@/common/decorators/swagger.decorator';
-import { UsersSwagger } from './docs/userSwagger.docs';
+import { UsersSwagger } from '../docs/userSwagger.docs';
 import { User } from '@/common/decorators/userRefreshToken.decorator';
+import { UserFacade } from '../../application/user.facade';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private userFacade: UserFacade,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
@@ -36,13 +40,14 @@ export class UsersController {
     return UserMapper.privateUser(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   @Get(':id')
   @UseSwagger(...UsersSwagger.GetUserById)
   async getUserById(@Param('id') id: number) {
-    const user = await this.usersService.getUser({ id });
+    const user = await this.userFacade.queries.getUser(id);
     return UserMapper.safeUser(user);
   }
+
   @UseGuards(JwtAuthGuard)
   @Get()
   @UseSwagger(...UsersSwagger.GetUsers)

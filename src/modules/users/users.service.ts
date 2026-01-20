@@ -7,7 +7,7 @@ import { PrismaService } from '../core/prisma/prisma.service';
 import { RedisService } from '../core/redis/redis.service';
 import { Prisma, User } from '@prisma/client';
 import { UserQueryDto } from './dto/user-query.dto';
-import { UserMapper } from './mappers/users.mapper';
+import { UserMapper } from './api/REST/mappers/users.mapper';
 import { ICreateUserDto } from './dto/create-user.dto';
 import { IUpdateUserDto } from './dto/update-user.dto';
 

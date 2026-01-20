@@ -2,6 +2,7 @@ import { IUser } from './user.interface';
 import { UserServices } from './services';
 import {
   IsBoolean,
+  IsDate,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -13,6 +14,7 @@ import { DomainError } from '@/common/errors/domain.error';
 import { $Enums } from '@prisma/client';
 
 export class UserAggregate extends UserServices implements IUser {
+  @IsOptional()
   @IsNumber()
   id;
   @IsString()
@@ -28,7 +30,7 @@ export class UserAggregate extends UserServices implements IUser {
   telegramId: string | null = null;
 
   @IsEnum($Enums.userRoles)
-  role: $Enums.userRoles = $Enums.userRoles.ADMIN;
+  role: $Enums.userRoles = $Enums.userRoles.USER;
 
   @IsEnum($Enums.userStatus)
   status: $Enums.userStatus = $Enums.userStatus.ACTIVE;
@@ -40,10 +42,10 @@ export class UserAggregate extends UserServices implements IUser {
   @IsString()
   @IsOptional()
   userImage: string | null;
-  @IsString()
+  @IsDate()
   createdAt = new Date();
   //.toISOString();
-  @IsString()
+  @IsDate()
   updatedAt = new Date();
   //.toISOString();
 

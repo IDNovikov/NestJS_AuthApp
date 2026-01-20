@@ -6,5 +6,6 @@ export interface IDelUserImage {
 
 export const DEL_USER_IMAGE = async function (this: IUser) {
   this.userImage = null;
-  this.updatedAt = new Date().toISOString();
+  this.updatedAt = new Date();
+  //.toISOString();
 };

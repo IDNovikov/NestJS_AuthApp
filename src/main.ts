@@ -4,7 +4,6 @@ import { AppModule } from '@/app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { LoggingInterceptors } from './common/interceptors/loggining.intrceptor';
-import { GlobalHttpExceptionFilter } from './common/filters/http-exception.filter';
 import cookieParser from 'cookie-parser';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 
@@ -54,7 +53,6 @@ async function bootstrap() {
   );
   app.use(cookieParser());
   app.useGlobalInterceptors(new LoggingInterceptors());
-  app.useGlobalFilters(new GlobalHttpExceptionFilter());
   const port = process.env.PORT ?? 3000;
 
   app.enableCors({ origin: '*', credentials: true });

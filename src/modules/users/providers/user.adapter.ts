@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { PrismaService } from '@/modules/core/prisma/prisma.service';
 import { RedisService } from '@/modules/core/redis/redis.service';
@@ -15,22 +20,64 @@ export class UserAdapter implements UserRepository {
     private prisma: PrismaService,
     private redis: RedisService,
   ) {}
-  create(user: IUser): Promise<UserAggregate> {
-    return;
+  async create(user: IUser): Promise<UserAggregate> {
+    const { email, password, userName } = user;
+
+    const createdUser = await this.prisma.user
+      .create({
+        data: {
+          userName: userName,
+          email: email,
+          password: password,
+          role: 'USER',
+        },
+      })
+      .catch((err) => {
+        this.logger.error(err);
+        throw new ConflictException(err);
+      });
+    const userAggregate = UserAggregate.create(createdUser);
+    await this.redis.set(`user:${createdUser.id}`, userAggregate);
+    return userAggregate;
   }
 
-  update(user: IUser): Promise<UserAggregate> {
-    return;
+  async update(user: IUser): Promise<UserAggregate> {
+    const updatedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: user,
+    });
+
+    if (!updatedUser)
+      throw new NotFoundException({ message: 'User was not updated' });
+
+    const userAggregate = UserAggregate.create(updatedUser);
+    await this.redis.del(`user:${updatedUser.id}`);
+    await this.redis.set(`user:${updatedUser.id}`, userAggregate);
+    return userAggregate;
   }
-  findOneById(id: string): Promise<UserAggregate> {
-    return;
-  }
-  findFirstByEmailOrName(
-    userName: string,
-    email: string,
+
+  async findUser(
+    identifier: { id: number } | { email: string } | { userName: string },
   ): Promise<UserAggregate> {
-    return;
+    if ('id' in identifier) {
+      const cached = await this.redis.get<UserAggregate>(
+        `user:${identifier.id}`,
+      );
+
+      if (cached) return cached;
+    }
+    const user = await this.prisma.user.findUnique({
+      where: identifier,
+    });
+
+    if (!user) {
+      throw new NotFoundException({ message: 'User not found' });
+    }
+    const userAggregate = UserAggregate.create(user);
+    await this.redis.set(`user:${user.id}`, userAggregate);
+    return userAggregate;
   }
+
   async findAll(
     dto: UserQueryDto,
   ): Promise<{ data: UserAggregate[]; total: number }> {
@@ -60,10 +107,17 @@ export class UserAdapter implements UserRepository {
 
   async delete(id: number): Promise<UserAggregate> {
     const user = await this.prisma.user.delete({ where: { id: id } });
-    if (!user) {
-      throw new NotFoundException({ message: 'User not found' });
-    }
     await this.redis.del(`user:${id}`);
     return UserAggregate.create(user);
+  }
+
+  async deleteUnverifiedUsers(): Promise<number> {
+    const EXPIRATION_MINUTES = 30;
+
+    const expiredDate = new Date(Date.now() - EXPIRATION_MINUTES * 60000);
+    const deleted = await this.prisma.user.deleteMany({
+      where: { isEmailVerified: false, createdAt: { lt: expiredDate } },
+    });
+    return deleted.count;
   }
 }

@@ -6,5 +6,6 @@ export interface ISetUserImage {
 
 export const SET_USER_IMAGE = async function (this: IUser, link: string) {
   this.userImage = link;
-  this.updatedAt = new Date().toISOString();
+  this.updatedAt = new Date();
+  //.toISOString();
 };

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { UsersService } from '../users.service';
+import { UsersService } from '../../users.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class UnVerifiedUsersCleanUpCron {
     if (deletedCount > 0) {
       this.logger.log(`Deleted ${deletedCount} unverified users`);
     } else {
-      this.logger.log(`No delted`);
+      this.logger.log(`No deleted`);
     }
   }
 }
