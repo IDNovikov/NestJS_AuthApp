@@ -9,8 +9,8 @@ import { PrismaService } from '@/modules/core/prisma/prisma.service';
 import { RedisService } from '@/modules/core/redis/redis.service';
 import { IUser } from '../domain/user.interface';
 import { UserAggregate } from '../domain/user.aggregate';
-import { UserQueryDto } from '../dto/user-query.dto';
 import { Prisma } from '@prisma/client';
+import { GetUsersDTO } from './dto/get-users.dto';
 
 @Injectable()
 export class UserAdapter implements UserRepository {
@@ -79,7 +79,7 @@ export class UserAdapter implements UserRepository {
   }
 
   async findAll(
-    dto: UserQueryDto,
+    dto: GetUsersDTO,
   ): Promise<{ data: UserAggregate[]; total: number }> {
     const { page = 1, limit = 20, sortBy, order, search } = dto;
 

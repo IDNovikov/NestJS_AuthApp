@@ -7,7 +7,6 @@ import {
 } from '@nestjs/graphql';
 import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 
-// --- если хочешь добавить enum красиво:
 export enum UserRole {
   USER = 'USER',
   ADMIN = 'ADMIN',
@@ -19,37 +18,36 @@ export enum UserStatus {
   DELETED = 'DELETED',
 }
 
-// обязательно регистрируем enum'ы в GraphQL:
 registerEnumType(UserRole, { name: 'UserRole' });
 registerEnumType(UserStatus, { name: 'UserStatus' });
 
 @ObjectType()
 export class UserGqlEntity {
-  @Field(() => Int)
+  @Field(() => Int, { description: 'User ID (number)' })
   id!: number;
 
-  @Field()
+  @Field({ description: 'User email (string)' })
   email!: string;
 
-  @Field()
+  @Field({ description: 'User name (string)' })
   userName!: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, { nullable: true, description: 'Telegram ID(string)' })
   telegramId?: string | null;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, { nullable: true, description: 'Image (link S3)' })
   userImage!: string | null;
 
-  @Field(() => UserRole)
+  @Field(() => UserRole, { description: 'User role (ENUM)' })
   role!: UserRole;
 
-  @Field(() => UserStatus)
+  @Field(() => UserStatus, { description: 'User status (ENUM)' })
   status!: UserStatus;
 
-  @Field(() => Date)
+  @Field(() => Date, { description: 'Created (Date obj)' })
   createdAt!: Date;
 
-  @Field(() => Date)
+  @Field(() => Date, { description: 'Updated (Date obj)' })
   updatedAt!: Date;
 }
 

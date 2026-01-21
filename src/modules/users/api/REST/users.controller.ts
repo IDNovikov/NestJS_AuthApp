@@ -12,9 +12,9 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../../users.service';
 import { ApiTags } from '@nestjs/swagger';
-import { UpdateUserDto } from '../../dto/update-user.dto';
-import { UserQueryDto } from '../../dto/user-query.dto';
-import { CreateUserDto } from '../../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserQueryDto } from '../dto/user-query.dto';
+import { CreateUserDto } from '../dto/create-user.dto';
 import { Roles } from '@/modules/auth/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/modules/auth/shared/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';

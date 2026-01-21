@@ -24,7 +24,8 @@ import { WSChat } from './modules/core/ws/ws.module';
       envFilePath: '.env',
       cache: true,
     }),
-    ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
+    //TODO: FIX: not works with GRAPH
+    //ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
     RedisModule,
     CoreModule,
     UserModule,
@@ -37,7 +38,7 @@ import { WSChat } from './modules/core/ws/ws.module';
       autoSchemaFile: true,
       playground: true,
       sortSchema: true,
-      context: ({ req, res }) => (req, res),
+      context: ({ req, res }) => ({ req, res }),
     }),
   ],
   providers: [

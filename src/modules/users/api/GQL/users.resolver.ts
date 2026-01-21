@@ -1,10 +1,20 @@
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UsersService } from '../../users.service';
 import { CreateUserInput, UserGqlEntity } from './models/user.gql';
+import { UserFacade } from '../../application/user.facade';
 
 @Resolver(() => UserGqlEntity)
 export class UserResolver {
-  constructor(private userService: UsersService) {}
+  constructor(
+    private userService: UsersService,
+    private userFacade: UserFacade,
+  ) {}
+
+  @Query(() => UserGqlEntity)
+  user(@Args('id', { type: () => Int }) id: number) {
+    return this.userFacade.queries.getUser(id);
+  }
+
   @Query(() => [UserGqlEntity])
   async users(
     @Args('search', { type: () => String, nullable: true }) search?: string,
@@ -17,11 +27,6 @@ export class UserResolver {
       search,
     });
     return items;
-  }
-
-  @Query(() => UserGqlEntity)
-  user(@Args('id', { type: () => Int }) id: number) {
-    return this.userService.getUser({ id });
   }
 
   // @Mutation(() => UserGqlEntity)

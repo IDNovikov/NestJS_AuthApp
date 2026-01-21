@@ -3,8 +3,8 @@ import { UsersService } from '../users.service';
 import { UserMapper } from '../api/REST/mappers/users.mapper';
 import { AuthUserModel } from '../../core/adapters/users/users.type';
 import { IAuthUserWriterPort } from '../../core/adapters/users/writer/authUser-writer.port';
-import { IUpdateUserDto } from '../dto/update-user.dto';
-import { ICreateUserDto } from '../dto/create-user.dto';
+import { IUpdateUserDto } from '../api/dto/update-user.dto';
+import { ICreateUserDto } from '../api/dto/create-user.dto';
 
 @Injectable()
 export class AuthUserWriterLocal implements IAuthUserWriterPort {
