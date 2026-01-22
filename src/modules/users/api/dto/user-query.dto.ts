@@ -1,3 +1,4 @@
+import { Field, InputType, Int } from '@nestjs/graphql';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -9,7 +10,9 @@ import {
   Min,
 } from 'class-validator';
 
+@InputType()
 export class UserQueryDto {
+  @Field(() => Int, { nullable: true })
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @Type(() => Number)
@@ -18,6 +21,7 @@ export class UserQueryDto {
   @IsPositive()
   page?: number;
 
+  @Field(() => Int, { nullable: true })
   @ApiPropertyOptional({ default: 20 })
   @IsOptional()
   @Type(() => Number)
@@ -27,6 +31,7 @@ export class UserQueryDto {
   @IsPositive()
   limit?: number;
 
+  @Field({ nullable: true })
   @ApiPropertyOptional({
     enum: ['createdAt', 'email', 'userName'],
     default: 'createdAt',
@@ -34,9 +39,16 @@ export class UserQueryDto {
   @IsOptional()
   @IsString()
   sortBy: 'createdAt' | 'email' | 'userName' = 'createdAt';
+
+  @Field({ nullable: true })
   @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
   @IsOptional()
   @IsString()
   order: 'asc' | 'desc' = 'desc';
-  @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
+
+  @Field({ nullable: true })
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

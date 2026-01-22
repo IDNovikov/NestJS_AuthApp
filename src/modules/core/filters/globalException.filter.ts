@@ -12,6 +12,9 @@ import { Request, Response } from 'express';
 export class GlobalExceptionFilter<T> implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
   catch(exception: T, host: ArgumentsHost) {
+    if (host.getType() !== 'http') {
+      throw exception;
+    }
     this.logger.error(exception);
 
     const context = host.switchToHttp();

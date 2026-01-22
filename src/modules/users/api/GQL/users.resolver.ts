@@ -1,7 +1,8 @@
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UsersService } from '../../users.service';
-import { CreateUserInput, UserGqlEntity } from './models/user.gql';
+import { UserGqlEntity } from './models/user.gql';
 import { UserFacade } from '../../application/user.facade';
+import { UserQueryDto } from '../dto/user-query.dto';
 
 @Resolver(() => UserGqlEntity)
 export class UserResolver {
@@ -16,17 +17,15 @@ export class UserResolver {
   }
 
   @Query(() => [UserGqlEntity])
-  async users(
-    @Args('search', { type: () => String, nullable: true }) search?: string,
-  ) {
-    const { items } = await this.userService.getUsers({
-      page: 1,
-      limit: 100,
-      sortBy: 'createdAt',
-      order: 'desc',
-      search,
+  async users(@Args('query') query: UserQueryDto) {
+    const { data, total } = await this.userFacade.queries.getUsers({
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      order: query.order,
+      search: query.search,
     });
-    return items;
+    return data;
   }
 
   // @Mutation(() => UserGqlEntity)

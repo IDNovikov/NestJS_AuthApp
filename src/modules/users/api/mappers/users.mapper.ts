@@ -1,5 +1,5 @@
 import { User } from '@prisma/client';
-import { omit } from '../../../utils/omit';
+import { omit } from '../../utils/omit';
 
 export class UserMapper {
   static safeUser(user: User) {

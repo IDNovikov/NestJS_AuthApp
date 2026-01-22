@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users.service';
-import { UserMapper } from '../api/REST/mappers/users.mapper';
+import { UserMapper } from '../api/mappers/users.mapper';
 import { AuthUserModel } from '../../core/adapters/users/users.type';
 import { IAuthUserWriterPort } from '../../core/adapters/users/writer/authUser-writer.port';
 import { IUpdateUserDto } from '../api/dto/update-user.dto';

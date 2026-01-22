@@ -47,7 +47,7 @@ export class UserFacade {
   private getUsers(dto: GetUsersDTO) {
     return this.QueryBus.execute<
       GetUsersQuery,
-      GetUsersQueryHandler['execute']
+      { data: UserAggregate[]; total: number }
     >(new GetUsersQuery(dto));
   }
 }

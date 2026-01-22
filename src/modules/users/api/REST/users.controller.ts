@@ -18,7 +18,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { Roles } from '@/modules/auth/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/modules/auth/shared/guards/roles.guard';
 import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
-import { UserMapper } from './mappers/users.mapper';
+import { UserMapper } from '../mappers/users.mapper';
 import { UseSwagger } from '@/common/decorators/swagger.decorator';
 import { UsersSwagger } from '../docs/userSwagger.docs';
 import { User } from '@/common/decorators/userRefreshToken.decorator';

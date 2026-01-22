@@ -36,7 +36,8 @@ export class GetUsersQueryHandler
         );
       },
     );
-    if (!!data.length) {
+
+    if (!data.length) {
       throw new BadRequestException(`No one users is not found`);
     }
     return { data, total };
