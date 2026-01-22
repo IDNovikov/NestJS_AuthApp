@@ -61,5 +61,6 @@ async function bootstrap() {
   console.log(`REST:    http://localhost:${port}/api`);
   console.log(`Swagger: http://localhost:${port}/api/docs`);
   console.log(`GraphQL: http://localhost:${port}/graphql`);
+  console.log(`Sandbox: https://studio.apollographql.com/sandbox/explorer`);
 }
 bootstrap();

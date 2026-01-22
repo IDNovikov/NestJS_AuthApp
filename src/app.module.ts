@@ -3,7 +3,6 @@ import { CoreModule } from './modules/core/core.module';
 import { UserModule } from './modules/users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './modules/auth/auth.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { RedisModule } from './modules/core/redis/redis.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -15,6 +14,8 @@ import { AuthUserWriterLocal } from './modules/users/adapters/authUser-writer.ad
 import { UsersAdaptersModule } from './modules/core/adapters/users/user.adapters.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { WSChat } from './modules/core/ws/ws.module';
+import { GqlThrottlerGuard } from './common/guards/gql-throttler.quard';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { WSChat } from './modules/core/ws/ws.module';
       cache: true,
     }),
     //TODO: FIX: not works with GRAPH
-    //ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
+    ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
     RedisModule,
     CoreModule,
     UserModule,
@@ -52,7 +53,7 @@ import { WSChat } from './modules/core/ws/ws.module';
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: GqlThrottlerGuard,
     },
   ],
 })
