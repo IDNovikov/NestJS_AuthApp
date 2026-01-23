@@ -50,10 +50,3 @@ export class UserGqlEntity {
   @Field(() => Date, { description: 'Updated (Date obj)' })
   updatedAt!: Date;
 }
-
-@InputType()
-export class CreateUserInput {
-  @Field() @IsEmail() email!: string;
-  @Field() @IsNotEmpty() @MinLength(6) password!: string;
-  @Field() @IsNotEmpty() @MinLength(3) userName!: string;
-}

@@ -4,6 +4,7 @@ import { UserGqlEntity } from './models/user.gql';
 import { UserFacade } from '../../application/user.facade';
 import { UserQueryDto } from '../dto/user-query.dto';
 import { PaginatedUsers } from './response/response-with-pagination.gql';
+import { CreateUserInput } from './inputs/create-user.input';
 
 @Resolver(() => UserGqlEntity)
 export class UserResolver {
@@ -47,14 +48,15 @@ export class UserResolver {
     };
   }
 
-  // @Mutation(() => UserGqlEntity)
-  // createUser(@Args('input') input: CreateUserInput) {
-  //   return this.userService.createUser(input);
+  @Mutation(() => UserGqlEntity)
+  createUser(@Args('input') input: CreateUserInput) {
+    return this.userFacade.commands.createUser(input);
+  }
+
+  //   @Mutation(() => UserGql)
+  // updateUser(@Args('id', { type: () => Int }) id: number, @Args('input') input: UpdateUserDto) {
+  //   return this.userService.update(id, input);
   // }
-  //     @Mutation(() => UserGql)
-  //   updateUser(@Args('id', { type: () => Int }) id: number, @Args('input') input: UpdateUserDto) {
-  //     return this.userService.update(id, input);
-  //   }
 
   @Mutation(() => UserGqlEntity)
   removeUser(@Args('id', { type: () => Int }) id: number) {
