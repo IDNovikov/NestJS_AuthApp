@@ -37,7 +37,7 @@ export class UsersController {
   @UseSwagger(...UsersSwagger.getMe)
   async getMe(@User() userId: { sub: number }) {
     return UserMapper.privateUser(
-      await this.usersService.getUser({ id: userId.sub }),
+      await this.userFacade.queries.getUser(userId.sub),
     );
   }
 
@@ -52,13 +52,13 @@ export class UsersController {
   @Get()
   @UseSwagger(...UsersSwagger.GetUsers)
   async getUsers(@Query() q: UserQueryDto) {
-    const { items, total, page, limit } = await this.usersService.getUsers(q);
+    const { data, total } = await this.userFacade.queries.getUsers(q);
 
     return {
-      items: items.map(UserMapper.safeUser),
+      items: data.map(UserMapper.safeUser),
       total,
-      page,
-      limit,
+      page: q.page,
+      limit: q.limit,
     };
   }
   @UseGuards(JwtAuthGuard)

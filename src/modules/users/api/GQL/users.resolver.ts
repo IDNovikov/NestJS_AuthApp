@@ -3,6 +3,7 @@ import { UsersService } from '../../users.service';
 import { UserGqlEntity } from './models/user.gql';
 import { UserFacade } from '../../application/user.facade';
 import { UserQueryDto } from '../dto/user-query.dto';
+import { PaginatedUsers } from './response/response-with-pagination.gql';
 
 @Resolver(() => UserGqlEntity)
 export class UserResolver {
@@ -16,16 +17,34 @@ export class UserResolver {
     return this.userFacade.queries.getUser(id);
   }
 
-  @Query(() => [UserGqlEntity])
+  @Query(() => PaginatedUsers)
   async users(@Args('query') query: UserQueryDto) {
+    const { limit = 10, page = 1, order, sortBy, search } = query;
     const { data, total } = await this.userFacade.queries.getUsers({
-      page: query.page,
-      limit: query.limit,
-      sortBy: query.sortBy,
-      order: query.order,
-      search: query.search,
+      page: page,
+      limit: limit,
+      sortBy: sortBy,
+      order: order,
+      search: search,
     });
-    return data;
+    const users = data.map((u) => ({
+      id: Number(u.id),
+      email: u.email,
+      userName: u.userName,
+      telegramId: u.telegramId,
+      userImage: u.userImage,
+      role: u.role,
+      status: u.status,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    }));
+
+    return {
+      data: users,
+      total,
+      limit: query.limit,
+      offset: (page - 1) * limit,
+    };
   }
 
   // @Mutation(() => UserGqlEntity)

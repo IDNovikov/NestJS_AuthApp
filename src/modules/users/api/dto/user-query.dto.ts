@@ -1,4 +1,4 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
+import { Field, InputType, Int, registerEnumType } from '@nestjs/graphql';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -9,6 +9,25 @@ import {
   Max,
   Min,
 } from 'class-validator';
+
+enum sortBy {
+  createdAt = 'createdAt',
+  email = 'email',
+  userName = 'userName',
+}
+registerEnumType(sortBy, {
+  name: 'SortBy',
+  description: 'Sorting fields',
+});
+
+enum order {
+  asc = 'asc',
+  desc = 'desc',
+}
+registerEnumType(order, {
+  name: 'order',
+  description: 'Sorting fields',
+});
 
 @InputType()
 export class UserQueryDto {
@@ -31,7 +50,7 @@ export class UserQueryDto {
   @IsPositive()
   limit?: number;
 
-  @Field({ nullable: true })
+  @Field(() => sortBy, { nullable: true })
   @ApiPropertyOptional({
     enum: ['createdAt', 'email', 'userName'],
     default: 'createdAt',
@@ -40,7 +59,7 @@ export class UserQueryDto {
   @IsString()
   sortBy: 'createdAt' | 'email' | 'userName' = 'createdAt';
 
-  @Field({ nullable: true })
+  @Field(() => order, { nullable: true })
   @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
   @IsOptional()
   @IsString()
