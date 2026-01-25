@@ -31,7 +31,7 @@ export class UserFacade {
   private createUser(user: CreateUserDTO) {
     return this.CommandBus.execute<
       CreateUserCommand,
-      CreateUserCommandHandler['execute']
+       UserAggregate
     >(new CreateUserCommand(user));
   }
 

@@ -1,6 +1,6 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { Type } from '@nestjs/common';
-import { UserGqlEntity } from '../models/user.gql';
+import { UserGqlEntity } from '../models/user-gql.entity';
 
 export interface IPaginated<T> {
   data: T[];

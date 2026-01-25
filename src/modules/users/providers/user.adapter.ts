@@ -56,27 +56,33 @@ export class UserAdapter implements UserRepository {
     return userAggregate;
   }
 
-  async findUser(
-    identifier: { id: number } | { email: string } | { userName: string },
-  ): Promise<UserAggregate> {
-    if ('id' in identifier) {
-      const cached = await this.redis.get<UserAggregate>(
-        `user:${identifier.id}`,
-      );
+async findUser(
+  { id, email, userName }: { id?: number; email?: string; userName?: string },
+): Promise<UserAggregate | null> {
 
-      if (cached) return cached;
-    }
-    const user = await this.prisma.user.findUnique({
-      where: identifier,
-    });
+  if (id == null && !email && !userName) return null;
 
-    if (!user) {
-      throw new NotFoundException({ message: 'User not found' });
-    }
-    const userAggregate = UserAggregate.create(user);
-    await this.redis.set(`user:${user.id}`, userAggregate);
-    return userAggregate;
+  if (id != null) {
+    const cached = await this.redis.get<UserAggregate>(`user:${id}`);
+    if (cached) return cached;
   }
+
+  const or: Prisma.UserWhereInput[] = [];
+  if (email) or.push({ email });
+  if (userName) or.push({ userName });
+  if (id != null) or.push({ id });
+
+  const user = await this.prisma.user.findFirst({
+    where: { OR: or },
+  });
+
+  if (!user) return null;
+
+  const userAggregate = UserAggregate.create(user);
+  await this.redis.set(`user:${user.id}`, userAggregate);
+  return userAggregate;
+}
+
 
   async findAll(
     dto: GetUsersDTO,

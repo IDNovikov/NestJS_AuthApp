@@ -15,8 +15,9 @@ export class CreateUserCommandHandler
     const userAggregate = UserAggregate.create(dto);
 
     const existingUser = await this.userRepository.findUser({
-      email: userAggregate.email,
+      email: userAggregate.email, userName:dto.userName
     });
+
     if (existingUser?.email === userAggregate.email) {
       throw new ConflictException(`Email already registered`);
     } else if (existingUser?.userName === userAggregate.userName) {
@@ -24,6 +25,7 @@ export class CreateUserCommandHandler
         `User name ${existingUser.userName} already exist`,
       );
     }
+
     const createdUser = await this.userRepository
       .create(userAggregate)
       .catch((err) => {

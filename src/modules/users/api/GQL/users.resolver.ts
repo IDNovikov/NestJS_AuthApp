@@ -1,10 +1,11 @@
 import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UsersService } from '../../users.service';
-import { UserGqlEntity } from './models/user.gql';
+import { UserGqlEntity } from './models/user-gql.entity';
 import { UserFacade } from '../../application/user.facade';
 import { UserQueryDto } from '../dto/user-query.dto';
 import { PaginatedUsers } from './response/response-with-pagination.gql';
-import { CreateUserInput } from './inputs/create-user.input';
+import { CreateUserDto } from '../dto/create-user.dto';
+
 
 @Resolver(() => UserGqlEntity)
 export class UserResolver {
@@ -49,7 +50,7 @@ export class UserResolver {
   }
 
   @Mutation(() => UserGqlEntity)
-  createUser(@Args('input') input: CreateUserInput) {
+  createUser(@Args('input') input: CreateUserDto) {
     return this.userFacade.commands.createUser(input);
   }
 

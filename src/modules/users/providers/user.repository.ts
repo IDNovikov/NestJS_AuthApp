@@ -6,15 +6,14 @@ import { UpdateUserDTO } from './dto/update-user.dto';
 export abstract class UserRepository {
   abstract create(user: IUser): Promise<UserAggregate>;
 
-  //Что принимаем в аргументах?
   abstract update(
     identifier: { id: number } | { email: string },
     dto: UpdateUserDTO,
   ): Promise<UserAggregate>;
 
   abstract findUser(
-    identifier: { id: number } | { email: string } | { userName: string },
-  ): Promise<UserAggregate>;
+    {id, email, userName}:{id?:number, email?:string, userName?:string},
+  ): Promise<UserAggregate|null>;
 
   abstract findAll(
     dto: GetUsersDTO,
