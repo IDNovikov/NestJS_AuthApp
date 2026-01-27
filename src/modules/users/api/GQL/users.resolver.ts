@@ -5,6 +5,8 @@ import { UserFacade } from '../../application/user.facade';
 import { UserQueryDto } from '../dto/user-query.dto';
 import { PaginatedUsers } from './response/response-with-pagination.gql';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '@/modules/auth/shared/guards/jwt-auth.guard';
 
 
 @Resolver(() => UserGqlEntity)
@@ -14,6 +16,7 @@ export class UserResolver {
     private userFacade: UserFacade,
   ) {}
 
+  //@UseGuards(JwtAuthGuard)
   @Query(() => UserGqlEntity)
   user(@Args('id', { type: () => Int }) id: number) {
     return this.userFacade.queries.getUser(id);

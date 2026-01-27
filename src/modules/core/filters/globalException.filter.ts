@@ -12,9 +12,9 @@ import { Request, Response } from 'express';
 export class GlobalExceptionFilter<T> implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
   catch(exception: T, host: ArgumentsHost) {
-    if (host.getType() !== 'http') {
-      throw exception;
-    }
+    // if (host.getType() !== 'http') {
+    //   throw exception;
+    // }
     this.logger.error(exception);
 
     const context = host.switchToHttp();
@@ -27,6 +27,10 @@ export class GlobalExceptionFilter<T> implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
+        if(['graphql'].includes(host.getType())){
+          throw new HttpException(this._response(status, req, exception), status)
+          
+        }
     res.status(status).json(this._response(status, req, exception));
   }
 

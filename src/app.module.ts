@@ -16,6 +16,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { WSChat } from './modules/core/ws/ws.module';
 import { GqlThrottlerGuard } from './common/guards/gql-throttler.quard';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { gqlErrorHandler } from './common/errors/gql.error';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
       playground: true,
       sortSchema: true,
       context: ({ req, res }) => ({ req, res }),
+      formatError:gqlErrorHandler, 
     }),
   ],
   providers: [
