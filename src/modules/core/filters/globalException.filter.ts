@@ -27,10 +27,9 @@ export class GlobalExceptionFilter<T> implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-        if(['graphql'].includes(host.getType())){
-          throw new HttpException(this._response(status, req, exception), status)
-          
-        }
+    if (['graphql', 'rmq'].includes(host.getType())) {
+      throw new HttpException(this._response(status, req, exception), status);
+    }
     res.status(status).json(this._response(status, req, exception));
   }
 
